@@ -1,4 +1,4 @@
-package com.lothrazar.examplemod;
+package hama.industries.buni;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -8,18 +8,17 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
-@Mod(ModMain.MODID)
-public class ModMain {
+@Mod(BuniMod.MODID)
+public class BuniMod {
 
-  public static final String MODID = "examplemod";
+  public static final String MODID = "buni";
   public static final Logger LOGGER = LogManager.getLogger();
 
-  public ModMain() {
+  public BuniMod() {
     IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
-    ModRegistry.BLOCKS.register(eventBus);
-    ModRegistry.ITEMS.register(eventBus);
-    ModRegistry.TILE_ENTITIES.register(eventBus);
-    new ConfigManager();
+    BuniRegistry.BLOCKS.register(eventBus);
+    BuniRegistry.ITEMS.register(eventBus);
+    BuniRegistry.TILE_ENTITIES.register(eventBus);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
     FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setupClient);
   }

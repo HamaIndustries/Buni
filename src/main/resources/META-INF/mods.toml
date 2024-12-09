@@ -13,46 +13,47 @@ issueTrackerURL="https://github.com/Lothrazar/ForgeTemplate/issues" #optional
 # A list of mods - how many allowed here is determined by the individual mod loader
 [[mods]] #mandatory
 # The modid of the mod
-modId="examplemod" #mandatory
+modId="buni" #mandatory
 # The version number of the mod - there's a few well known ${} variables useable here or just hardcode it
 version="${mod_version}" #mandatory
  # A display name for the mod
  
-displayName="examplemod" #mandatory
+displayName="Buni" #mandatory
 # A URL to query for updates for this mod. See the JSON update specification <here>
-updateJSONURL="https://raw.githubusercontent.com/Lothrazar/ForgeTemplate/trunk/1.20/update.json" #optional
+#updateJSONURL="https://raw.githubusercontent.com/Lothrazar/ForgeTemplate/trunk/1.20/update.json" #optional
 # A URL for the "homepage" for this mod, displayed in the mod UI # replace with your website
-displayURL="https://www.curseforge.com/minecraft/mc-mods/_curseslug_"
+#displayURL="https://www.curseforge.com/minecraft/mc-mods/_curseslug_"
 
 # A file name (in the root of the mod JAR) containing a logo for display
-logoFile="" #optional
+logoFile="/META-INF/logo.png" #optional
 # A text field displayed in the mod UI
-credits="Thanks to forge fml mcp Mojang" #optional
+credits="Assets: CozyRosie, Code: hama" #optional
 # A text field displayed in the mod UI
 authors="${mod_authors}" #optional
 # The description text for the mod (multi line!) (#mandatory)
 
 description='''
-examplemod by ${mod_authors}
+${mod_description}
 '''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
-[[dependencies.examplemod]] #optional
+[[dependencies.buni]] #optional
     modId="forge" 
     mandatory=true 
     versionRange="${neo_version_range}" 
     ordering="NONE"
     side="BOTH"
-[[dependencies.examplemod]]
+[[dependencies.buni]]
     modId="minecraft"
     mandatory=true
     versionRange="[${mc_version},)"
     ordering="NONE"
     side="BOTH"
-[[dependencies.examplemod]]
-    modId="flib"
+[[dependencies.buni]]
+    modId="geckolib"
     mandatory=true
-    versionRange="[${flib_version},)"
+    versionRange="[${geckolib_version},)"
     ordering="NONE"
     side="BOTH"
+
 	
 	
