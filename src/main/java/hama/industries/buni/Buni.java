@@ -65,4 +65,8 @@ public class Buni extends PathfinderMob implements GeoEntity {
 
         return super.interactAt(player, hitPos, hand);
     }
+
+    public boolean hasEmissive() {
+        return false;
+    }
 }
