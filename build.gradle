@@ -115,6 +115,7 @@ minecraft {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
+    mavenCentral()
   flatDir { dir 'libs' } 
   maven {
     // location of the maven that hosts JEI files

@@ -1,5 +1,11 @@
 package hama.industries.buni;
 
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -16,18 +22,14 @@ public class BuniMod {
 
   public BuniMod() {
     IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
-    BuniRegistry.BLOCKS.register(eventBus);
-    BuniRegistry.ITEMS.register(eventBus);
-    BuniRegistry.TILE_ENTITIES.register(eventBus);
-    FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
-    FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setupClient);
+    BuniRegistry.ENTITIES.register(eventBus);
+    eventBus.addListener(BuniRegistry::registerAttributes);
   }
 
-  private void setup(final FMLCommonSetupEvent event) {
-    //    MinecraftForge.EVENT_BUS.register(new WhateverEvents()); 
-  }
+//  @SubscribeEvent
+//  private void commonSetup(final FMLCommonSetupEvent event) {}
 
-  private void setupClient(final FMLClientSetupEvent event) {
-    //for client side only setup
+  public static ResourceLocation id(String path) {
+    return new ResourceLocation(MODID, path);
   }
 }
