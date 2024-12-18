@@ -3,14 +3,19 @@ package hama.industries.buni.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import hama.industries.buni.Buni;
+import hama.industries.buni.BuniActivity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
+import software.bernie.geckolib.renderer.layer.FastBoneFilterGeoLayer;
+
+import java.util.List;
 
 public class BuniRenderer extends GeoEntityRenderer<Buni> {
 
@@ -30,7 +35,12 @@ public class BuniRenderer extends GeoEntityRenderer<Buni> {
     public BuniRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new BuniModel());
         addRenderLayer(new OptionalGlowingGeoLayer(this));
+        addRenderLayer(new FastBoneFilterGeoLayer<>(this, () -> List.of("mallet"), this::updateMalletVisibility));
         this.scaleWidth = 0.7f;
         this.scaleHeight = 0.7f;
+    }
+
+    public void updateMalletVisibility(GeoBone bone, Buni buni, float partialTicks) {
+        bone.setHidden(buni.activity() != BuniActivity.ATTACK);
     }
 }
