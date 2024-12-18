@@ -3,6 +3,7 @@ package hama.industries.buni;
 import com.mojang.serialization.Dynamic;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.DebugPackets;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -13,7 +14,6 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
@@ -43,12 +43,6 @@ public class Buni extends PathfinderMob implements GeoEntity {
     }
 
     @Override
-    protected void registerGoals() {
-        this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 12.0F));
-        super.registerGoals();
-    }
-
-    @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         BuniAnimations.registerControllers(this, controllers);
     }
@@ -56,6 +50,12 @@ public class Buni extends PathfinderMob implements GeoEntity {
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return this.cache;
+    }
+
+    @Override
+    protected void sendDebugPackets() {
+        super.sendDebugPackets();
+        DebugPackets.sendEntityBrain(this);
     }
 
     @Override
