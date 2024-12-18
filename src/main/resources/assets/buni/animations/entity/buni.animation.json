@@ -158,25 +158,18 @@
 					"scale": {
 						"vector": [1.4, 1.4, 1.2]
 					}
-				},
-				"frontLegLeft": {
+				}
+			}
+		},
+		"animation.buni.unguzzled": {
+			"loop": "hold_on_last_frame",
+			"bones": {
+				"bodyFull": {
 					"position": {
-						"vector": [0, 0, -1.25]
-					}
-				},
-				"frontLegRight": {
-					"position": {
-						"vector": [0, 0, -1.25]
-					}
-				},
-				"haunchLeft": {
-					"position": {
-						"vector": [0.5, 0, 0]
-					}
-				},
-				"haunchRight": {
-					"position": {
-						"vector": [-0.5, 0, 0]
+						"vector": [0, 0, -0.5]
+					},
+					"scale": {
+						"vector": [0.1, 0.1, 0.1]
 					}
 				}
 			}

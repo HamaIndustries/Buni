@@ -9,9 +9,6 @@ import net.minecraftforge.registries.RegistryObject;
 
 public class BuniRegistry {
 
-//  public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, BuniMod.MODID);
-//  public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, BuniMod.MODID);
-//  public static final DeferredRegister<BlockEntityType<?>> TILE_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, BuniMod.MODID);
   public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, BuniMod.MODID);
 
   public static final RegistryObject<EntityType<Buni>> BUNI = ENTITIES.register("buni",
