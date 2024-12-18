@@ -17,6 +17,7 @@ public class BuniMod {
     IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
     BuniRegistry.ENTITIES.register(eventBus);
     eventBus.addListener(BuniRegistry::registerAttributes);
+    eventBus.addListener(BuniActivity::registerActivities);
   }
 
 //  @SubscribeEvent

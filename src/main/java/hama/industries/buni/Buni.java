@@ -1,6 +1,9 @@
 package hama.industries.buni;
 
 import com.mojang.serialization.Dynamic;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
@@ -11,34 +14,31 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 
+@MethodsReturnNonnullByDefault
+@ParametersAreNonnullByDefault
 public class Buni extends PathfinderMob implements GeoEntity {
-
-    public record Activity(RawAnimation animation) {
-        public static Activity NONE = new Activity(BuniAnimations.IDLE);
-        public static Activity ATTACK = new Activity(BuniAnimations.ATTACK);
-        public static Activity DANCE = new Activity(BuniAnimations.DANCE);
-        public static Activity TUMBLE = new Activity(BuniAnimations.TUMBLE);
-        public static Activity GRABBED = new Activity(BuniAnimations.GRABBED);
-    }
-
-    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-    private Activity activity = Activity.NONE;
-
-    protected Buni(EntityType<? extends PathfinderMob> entityType, Level level) {
-        super(entityType, level);
-    }
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 3.0D).add(Attributes.MOVEMENT_SPEED, (double)0.3F);
+    }
+
+    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+    private BuniActivity activity = BuniActivity.NONE;
+    private ItemStack storedItem = ItemStack.EMPTY;
+
+    protected Buni(EntityType<? extends PathfinderMob> entityType, Level level) {
+        super(entityType, level);
     }
 
     @Override
@@ -59,9 +59,16 @@ public class Buni extends PathfinderMob implements GeoEntity {
 
     @Override
     public InteractionResult interactAt(Player player, Vec3 hitPos, InteractionHand hand) {
-//        if (hand == InteractionHand.MAIN_HAND)
-//            this.dance = !dance;
-        return super.interactAt(player, hitPos, hand);
+//        if (level().isClientSide) return InteractionResult.SUCCESS;
+        ItemStack stack = player.getItemInHand(hand);
+        if (player.isCrouching()) {
+            player.setItemInHand(hand, storedItem);
+            storedItem = stack;
+            return InteractionResult.CONSUME;
+        } else {
+            this.activity = this.activity == BuniActivity.NONE ? BuniActivity.DANCE : BuniActivity.NONE;
+            return InteractionResult.SUCCESS;
+        }
     }
 
     @Override
@@ -74,15 +81,39 @@ public class Buni extends PathfinderMob implements GeoEntity {
         return BuniAi.makeBrain(this.brainProvider().makeBrain(data));
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public Brain<Buni> getBrain() {
+        return (Brain<Buni>) super.getBrain();
+    }
+
     public boolean hasEmissive() {
         return false;
     }
 
-    boolean hasItem() {
-        return level().getNearestPlayer(this, 5) != null;
+    public boolean hasItem() {
+        return !storedItem.isEmpty();
     }
 
-    Activity activity() {
+    public Activity activity() {
         return activity;
+    }
+
+    @Override
+    protected void customServerAiStep() {
+        this.getBrain().tick((ServerLevel) this.level(), this);
+
+    }
+
+    @Override
+    public CompoundTag serializeNBT() {
+        CompoundTag tag = super.serializeNBT();
+        tag.put(BuniMod.MODID + ":guzzled_item", storedItem.serializeNBT());
+        return tag;
+    }
+
+    @Override
+    public void deserializeNBT(CompoundTag nbt) {
+        this.storedItem = ItemStack.of(nbt.getCompound(BuniMod.MODID + ":guzzled_item"));
     }
 }

@@ -5,9 +5,6 @@ import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public class BuniAnimations {
     public static final RawAnimation GUZZLE = RawAnimation.begin().thenPlay("animation.buni.guzzled");
     public static final RawAnimation UNGUZZLE = RawAnimation.begin().thenPlay("animation.buni.unguzzled");
@@ -23,11 +20,10 @@ public class BuniAnimations {
         controllers.add(
                 DefaultAnimations.basicPredicateController(buni, GUZZLE, UNGUZZLE, (a, b) -> buni.hasItem()),
                 new AnimationController<>(buni, "main_anim", 10, (state) -> {
-                    Buni.Activity activity = buni.activity();
-                    if (activity == Buni.Activity.NONE) {
-                        return state.setAndContinue(state.isMoving() ? RUN : IDLE);
+                    if (buni.activity() != BuniActivity.NONE && buni.activity() instanceof BuniActivity buniActivity) {
+                        return state.setAndContinue(buniActivity.animation);
                     }
-                    return state.setAndContinue(activity.animation());
+                    return state.setAndContinue(state.isMoving() ? RUN : IDLE);
                 })
         );
     }

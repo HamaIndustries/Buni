@@ -2,6 +2,7 @@ package hama.industries.buni;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.schedule.Activity;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -10,6 +11,7 @@ import net.minecraftforge.registries.RegistryObject;
 public class BuniRegistry {
 
   public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, BuniMod.MODID);
+  public static final DeferredRegister<Activity> ACTIVITIES = DeferredRegister.create(ForgeRegistries.ACTIVITIES, BuniMod.MODID);
 
   public static final RegistryObject<EntityType<Buni>> BUNI = ENTITIES.register("buni",
           () -> EntityType.Builder.of(Buni::new, MobCategory.CREATURE)
