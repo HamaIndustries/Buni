@@ -20,7 +20,7 @@ public class BuniAnimations {
         controllers.add(
                 DefaultAnimations.basicPredicateController(buni, GUZZLE, UNGUZZLE, (a, b) -> buni.hasItem()),
                 new AnimationController<>(buni, "main_anim", 10, (state) -> {
-                    if (buni.activity() != BuniActivity.NONE && buni.activity() instanceof BuniActivity buniActivity) {
+                    if (buni.activity() instanceof BuniActivity buniActivity) {
                         return state.setAndContinue(buniActivity.animation);
                     }
                     return state.setAndContinue(state.isMoving() ? RUN : IDLE);

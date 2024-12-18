@@ -2,8 +2,14 @@ package hama.industries.buni;
 
 import com.mojang.serialization.Dynamic;
 import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.DebugPackets;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -19,27 +25,36 @@ import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.OptionalInt;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public class Buni extends PathfinderMob implements GeoEntity {
+    public static final EntityDataAccessor<OptionalInt> ACTIVITY = SynchedEntityData.defineId(Buni.class, EntityDataSerializers.OPTIONAL_UNSIGNED_INT);
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 3.0D).add(Attributes.MOVEMENT_SPEED, (double)0.3F);
     }
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-    private BuniActivity activity = BuniActivity.NONE;
     private ItemStack storedItem = ItemStack.EMPTY;
+    @Nullable private BlockPos jukeboxPos = null;
 
     protected Buni(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
+    }
+
+    @Override
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        entityData.define(ACTIVITY, OptionalInt.of(BuiltInRegistries.ACTIVITY.getId(Activity.IDLE)));
     }
 
     @Override
@@ -67,7 +82,6 @@ public class Buni extends PathfinderMob implements GeoEntity {
             storedItem = stack;
             return InteractionResult.CONSUME;
         } else {
-            this.activity = this.activity == BuniActivity.NONE ? BuniActivity.DANCE : BuniActivity.NONE;
             return InteractionResult.SUCCESS;
         }
     }
@@ -97,13 +111,25 @@ public class Buni extends PathfinderMob implements GeoEntity {
     }
 
     public Activity activity() {
-        return activity;
+        return BuiltInRegistries.ACTIVITY.getHolder(entityData.get(ACTIVITY).orElse(-1)).map(Holder::get).orElse(Activity.IDLE);
+    }
+
+    public void setJukeboxPos(@Nullable BlockPos pos) {
+        jukeboxPos = pos;
+    }
+
+    @Nullable
+    public BlockPos getJukeboxPos() {
+        return jukeboxPos;
     }
 
     @Override
     protected void customServerAiStep() {
         this.getBrain().tick((ServerLevel) this.level(), this);
         BuniAi.updateActivity(this);
+        this.entityData.set(ACTIVITY,
+                getBrain().getActiveNonCoreActivity().map(act -> OptionalInt.of(BuiltInRegistries.ACTIVITY.getId(act))).orElse(OptionalInt.empty())
+        );
     }
 
     @Override
