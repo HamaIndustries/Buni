@@ -6,6 +6,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
@@ -102,7 +103,14 @@ public class Buni extends PathfinderMob implements GeoEntity {
     @Override
     protected void customServerAiStep() {
         this.getBrain().tick((ServerLevel) this.level(), this);
+        BuniAi.updateActivity(this);
+    }
 
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        Vec3 pos = source.getSourcePosition();
+        if (pos != null) this.knockback(2, pos.x - this.getX(), pos.z - this.getZ());
+        return false;
     }
 
     @Override

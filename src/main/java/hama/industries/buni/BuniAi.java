@@ -17,4 +17,8 @@ public class BuniAi {
     public static Brain.Provider<Buni> brainProvider() {
         return Brain.provider(MEMORY_TYPES, SENSOR_TYPES);
     }
+
+    public static void updateActivity(Buni buni) {
+
+    }
 }
