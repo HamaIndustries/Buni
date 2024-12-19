@@ -8,6 +8,7 @@ import net.minecraft.data.tags.TagsProvider;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
+import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.data.event.GatherDataEvent;
 import org.jetbrains.annotations.Nullable;
@@ -37,8 +38,14 @@ public class BuniDatagen {
         @Override
         protected void addTags(HolderLookup.Provider lookupProvider) {
             this.tag(BuniTags.Items.BUNI_TEMPTATIONS)
-                    .addTags(ItemTags.FLOWERS)
-                    .add(Items.FERN, Items.LARGE_FERN, Items.GRASS, Items.TALL_GRASS, Items.SEAGRASS);
+                    .addTags(ItemTags.FLOWERS, Tags.Items.CROPS_CARROT, Tags.Items.CROPS_BEETROOT)
+                    .add(
+                            Items.FERN,
+                            Items.LARGE_FERN,
+                            Items.GRASS,
+                            Items.TALL_GRASS,
+                            Items.SEAGRASS
+                    );
         }
     }
 }

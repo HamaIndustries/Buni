@@ -2,7 +2,6 @@ package hama.industries.buni;
 
 import com.mojang.serialization.Dynamic;
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -13,6 +12,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -20,12 +20,15 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -36,25 +39,28 @@ import java.util.OptionalInt;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-public class Buni extends PathfinderMob implements GeoEntity {
+public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     public static final EntityDataAccessor<OptionalInt> ACTIVITY = SynchedEntityData.defineId(Buni.class, EntityDataSerializers.OPTIONAL_UNSIGNED_INT);
+    public static final EntityDataAccessor<Boolean> GUZZLING = SynchedEntityData.defineId(Buni.class, EntityDataSerializers.BOOLEAN);
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 3.0D).add(Attributes.MOVEMENT_SPEED, (double)0.3F);
     }
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-    private ItemStack storedItem = ItemStack.EMPTY;
-    @Nullable private BlockPos jukeboxPos = null;
+    private final SimpleContainer inventory = new SimpleContainer(1);
 
     protected Buni(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
+        setCanPickUpLoot(canPickUpLoot());
+        entityData.set(GUZZLING, !getInventory().isEmpty());
     }
 
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         entityData.define(ACTIVITY, OptionalInt.of(BuiltInRegistries.ACTIVITY.getId(Activity.IDLE)));
+        entityData.define(GUZZLING, false);
     }
 
     @Override
@@ -75,15 +81,6 @@ public class Buni extends PathfinderMob implements GeoEntity {
 
     @Override
     public InteractionResult interactAt(Player player, Vec3 hitPos, InteractionHand hand) {
-//        if (level().isClientSide) return InteractionResult.SUCCESS;
-//        ItemStack stack = player.getItemInHand(hand);
-//        if (player.isCrouching()) {
-//            player.setItemInHand(hand, storedItem);
-//            storedItem = stack;
-//            return InteractionResult.CONSUME;
-//        } else {
-//            return InteractionResult.SUCCESS;
-//        }
         return super.interactAt(player, hitPos, hand);
     }
 
@@ -108,20 +105,11 @@ public class Buni extends PathfinderMob implements GeoEntity {
     }
 
     public boolean hasItem() {
-        return !storedItem.isEmpty();
+        return entityData.get(GUZZLING);
     }
 
     public Activity activity() {
         return BuiltInRegistries.ACTIVITY.getHolder(entityData.get(ACTIVITY).orElse(-1)).map(Holder::get).orElse(Activity.IDLE);
-    }
-
-    public void setJukeboxPos(@Nullable BlockPos pos) {
-        jukeboxPos = pos;
-    }
-
-    @Nullable
-    public BlockPos getJukeboxPos() {
-        return jukeboxPos;
     }
 
     @Override
@@ -136,19 +124,44 @@ public class Buni extends PathfinderMob implements GeoEntity {
     @Override
     public boolean hurt(DamageSource source, float amount) {
         Vec3 pos = source.getSourcePosition();
+        if (!getInventory().isEmpty()) {
+            getInventory().removeAllItems().forEach(this::spawnAtLocation);
+            this.entityData.set(GUZZLING, false);
+        }
         if (pos != null) this.knockback(2, pos.x - this.getX(), pos.z - this.getZ());
         return false;
     }
 
     @Override
-    public CompoundTag serializeNBT() {
-        CompoundTag tag = super.serializeNBT();
-        tag.put(BuniMod.MODID + ":guzzled_item", storedItem.serializeNBT());
-        return tag;
+    protected void pickUpItem(ItemEntity item) {
+        InventoryCarrier.pickUpItem(this, this, item);
+        if (!level().isClientSide) entityData.set(GUZZLING, !getInventory().isEmpty());
     }
 
     @Override
-    public void deserializeNBT(CompoundTag nbt) {
-        this.storedItem = ItemStack.of(nbt.getCompound(BuniMod.MODID + ":guzzled_item"));
+    public boolean canPickUpLoot() {
+        return getBrain().checkMemory(MemoryModuleType.ITEM_PICKUP_COOLDOWN_TICKS, MemoryStatus.VALUE_ABSENT);
+    }
+
+    @Override
+    public SimpleContainer getInventory() {
+        return inventory;
+    }
+
+    @Override
+    public boolean wantsToPickUp(ItemStack stack) {
+        return getInventory().canAddItem(stack);
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        writeInventoryToTag(tag);
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        readInventoryFromTag(tag);
     }
 }

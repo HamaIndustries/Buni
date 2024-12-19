@@ -30,6 +30,7 @@ public class BuniAi {
 
     public static final ImmutableList<? extends SensorType<? extends Sensor<? super Buni>>> SENSOR_TYPES = ImmutableList.of(
             SensorType.NEAREST_LIVING_ENTITIES,
+            SensorType.NEAREST_ITEMS,
             BUNI_TEMPTATIONS
     );
 
@@ -46,7 +47,9 @@ public class BuniAi {
             MemoryModuleType.TEMPTATION_COOLDOWN_TICKS,
             MemoryModuleType.IS_TEMPTED,
             MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES,
-            MemoryModuleType.DANCING
+            MemoryModuleType.DANCING,
+            MemoryModuleType.ITEM_PICKUP_COOLDOWN_TICKS,
+            MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM
     );
 
     @SubscribeEvent
@@ -56,14 +59,10 @@ public class BuniAi {
         BlockPos bpos = BlockPos.containing(event.getEventPosition());
         if (event.getVanillaEvent() == GameEvent.JUKEBOX_PLAY) {
             for (Buni bun : event.getLevel().getEntitiesOfClass(Buni.class, AABB.ofSize(event.getEventPosition(), r, r, r))) {
-                if (bun.getJukeboxPos() == null || bun.getJukeboxPos().distToCenterSqr(bun.position()) > bpos.distToCenterSqr(bun.position())) {
-                    bun.setJukeboxPos(bpos);
-                    bun.getBrain().setMemoryWithExpiry(MemoryModuleType.DANCING, true, 1000);
-                }
+                bun.getBrain().setMemoryWithExpiry(MemoryModuleType.DANCING, true, 100);
             }
         } else if (event.getVanillaEvent() == GameEvent.JUKEBOX_STOP_PLAY) {
             for (Buni bun : event.getLevel().getEntitiesOfClass(Buni.class, AABB.ofSize(event.getEventPosition(), r, r, r))) {
-                bun.setJukeboxPos(null);
                 bun.getBrain().eraseMemory(MemoryModuleType.DANCING);
             }
         }
@@ -96,8 +95,9 @@ public class BuniAi {
 
     public static void initIdleActivity(Brain<Buni> brain) {
         brain.addActivity(BuniActivity.IDLE, ImmutableList.of(
-                Pair.of(5, new FollowTemptation(e -> 1f)),
-                Pair.of(6, SetEntityLookTargetSometimes.create(EntityType.PLAYER, 6.0F, UniformInt.of(30, 60)))
+                Pair.of(0, new FollowTemptation(e -> 1f)),
+                Pair.of(1, GoToWantedItem.create(1.5f, true, 32)),
+                Pair.of(2, SetEntityLookTargetSometimes.create(EntityType.PLAYER, 6.0F, UniformInt.of(30, 60)))
         ));
     }
 
