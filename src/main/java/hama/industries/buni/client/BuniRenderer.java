@@ -51,12 +51,10 @@ public class BuniRenderer extends GeoEntityRenderer<Buni> {
 
     @Override
     public ResourceLocation getTextureLocation(Buni buni) {
-        if (buni.variant().equals(Buni.Variant.NORMAL)) {
+        if (buni.variant().equals(Buni.Variant.WHITE)) {
             return super.getTextureLocation(buni);
         } else {
             return BuniMod.id("textures/entity/buni_" + buni.variant().id() + ".png");
-//            var r = super.getTextureLocation(buni).withSuffix("_" + buni.variant().id());
-//            return r;
         }
     }
 }
