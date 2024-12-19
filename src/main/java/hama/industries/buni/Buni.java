@@ -76,14 +76,15 @@ public class Buni extends PathfinderMob implements GeoEntity {
     @Override
     public InteractionResult interactAt(Player player, Vec3 hitPos, InteractionHand hand) {
 //        if (level().isClientSide) return InteractionResult.SUCCESS;
-        ItemStack stack = player.getItemInHand(hand);
-        if (player.isCrouching()) {
-            player.setItemInHand(hand, storedItem);
-            storedItem = stack;
-            return InteractionResult.CONSUME;
-        } else {
-            return InteractionResult.SUCCESS;
-        }
+//        ItemStack stack = player.getItemInHand(hand);
+//        if (player.isCrouching()) {
+//            player.setItemInHand(hand, storedItem);
+//            storedItem = stack;
+//            return InteractionResult.CONSUME;
+//        } else {
+//            return InteractionResult.SUCCESS;
+//        }
+        return super.interactAt(player, hitPos, hand);
     }
 
     @Override

@@ -36,6 +36,9 @@ public class BuniRenderer extends GeoEntityRenderer<Buni> {
         super(renderManager, new BuniModel());
         addRenderLayer(new OptionalGlowingGeoLayer(this));
         addRenderLayer(new FastBoneFilterGeoLayer<>(this, () -> List.of("mallet"), this::updateMalletVisibility));
+        addRenderLayer(new FastBoneFilterGeoLayer<>(this, () -> List.of("glasses"),
+                (bone, buni, ticks) -> bone.setHidden(!buni.getName().getString().equals("yuki"))
+        ));
         this.scaleWidth = 0.7f;
         this.scaleHeight = 0.7f;
     }
