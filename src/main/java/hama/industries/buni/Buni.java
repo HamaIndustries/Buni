@@ -10,13 +10,12 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -36,6 +35,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.OptionalInt;
+import java.util.UUID;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
@@ -124,11 +124,35 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     @Override
     public boolean hurt(DamageSource source, float amount) {
         Vec3 pos = source.getSourcePosition();
-        if (!getInventory().isEmpty()) {
-            getInventory().removeAllItems().forEach(this::spawnAtLocation);
-            this.entityData.set(GUZZLING, false);
+        if (source.getDirectEntity() instanceof LivingEntity attacker && attacker.getMainHandItem().is(ItemTags.AXES)) {
+            if (level() instanceof ServerLevel serverLevel) {
+                BuniRegistry.BUNI.get().spawn(serverLevel, null, clone -> {
+//                    clone.load(saveWithoutId(new CompoundTag()));
+                    clone.deserializeNBT(serializeNBT());
+                    clone.setUUID(UUID.randomUUID());
+                    ItemStack stack = getInventory().getItem(0);
+                    int amt = stack.getCount();
+                    if (amt / 2 > 0) {
+                        getInventory().setItem(0, stack.copyWithCount(amt / 2));
+                        clone.getInventory().setItem(0, stack.copyWithCount(amt - amt / 2));
+                        clone.entityData.set(GUZZLING, true);
+                    } else {
+                        clone.getInventory().clearContent();
+                        clone.entityData.set(GUZZLING, false);
+                    }
+
+                    Vec3 norm = attacker.position().cross(position());
+                    this.knockback(0.5, norm.x, norm.z);
+                    clone.knockback(0.5, -norm.x, -norm.z);
+                }, blockPosition(), MobSpawnType.TRIGGERED, true, false);
+            }
+        } else {
+            if (!getInventory().isEmpty()) {
+                getInventory().removeAllItems().forEach(this::spawnAtLocation);
+                this.entityData.set(GUZZLING, false);
+            }
+            if (pos != null) this.knockback(2, pos.x - this.getX(), pos.z - this.getZ());
         }
-        if (pos != null) this.knockback(2, pos.x - this.getX(), pos.z - this.getZ());
         return false;
     }
 
@@ -163,5 +187,6 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         readInventoryFromTag(tag);
+        entityData.set(GUZZLING, !getInventory().isEmpty());
     }
 }
