@@ -4,10 +4,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import hama.industries.buni.Buni;
 import hama.industries.buni.BuniActivity;
+import hama.industries.buni.BuniMod;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
@@ -45,5 +47,16 @@ public class BuniRenderer extends GeoEntityRenderer<Buni> {
 
     public void updateMalletVisibility(GeoBone bone, Buni buni, float partialTicks) {
         bone.setHidden(buni.activity() != BuniActivity.ATTACK);
+    }
+
+    @Override
+    public ResourceLocation getTextureLocation(Buni buni) {
+        if (buni.variant().equals(Buni.Variant.NORMAL)) {
+            return super.getTextureLocation(buni);
+        } else {
+            return BuniMod.id("textures/entity/buni_" + buni.variant().id() + ".png");
+//            var r = super.getTextureLocation(buni).withSuffix("_" + buni.variant().id());
+//            return r;
+        }
     }
 }

@@ -1,6 +1,7 @@
 package hama.industries.buni;
 
 import com.mojang.serialization.Dynamic;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -34,6 +35,8 @@ import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.List;
+import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.UUID;
 
@@ -42,9 +45,49 @@ import java.util.UUID;
 public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     public static final EntityDataAccessor<OptionalInt> ACTIVITY = SynchedEntityData.defineId(Buni.class, EntityDataSerializers.OPTIONAL_UNSIGNED_INT);
     public static final EntityDataAccessor<Boolean> GUZZLING = SynchedEntityData.defineId(Buni.class, EntityDataSerializers.BOOLEAN);
+    public static final EntityDataAccessor<Integer> VARIANT_ID = SynchedEntityData.defineId(Buni.class,  EntityDataSerializers.INT);
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 3.0D).add(Attributes.MOVEMENT_SPEED, (double)0.3F);
+    }
+
+    public record Variant(String id, boolean dyeable, boolean emissive) {
+        private static final List<Variant> types = new ObjectArrayList<>();
+        public static final Variant NORMAL = new Variant("normal");
+        public static final Variant BLACK = new Variant("black");
+        public static final Variant BLUE = new Variant("blue");
+        public static final Variant CYAN = new Variant("cyan");
+        public static final Variant GRAY = new Variant("gray");
+        public static final Variant GREEN = new Variant("green");
+        public static final Variant LIGHT_BLUE = new Variant("light_blue");
+        public static final Variant LIGHT_GRAY = new Variant("light_gray");
+        public static final Variant LIME = new Variant("lime");
+        public static final Variant MAGENTA = new Variant("magenta");
+        public static final Variant ORANGE = new Variant("orange");
+        public static final Variant PINK = new Variant("pink");
+        public static final Variant PURPLE = new Variant("purple");
+        public static final Variant RED = new Variant("red");
+        public static final Variant YELLOW = new Variant("yellow");
+        public static final Variant DIAMOND = new Variant("diamond", false, true);
+        public static final Variant ENDER = new Variant("ender", false, true);
+        public static final Variant NETHER = new Variant("nether", false, true);
+
+        public Variant(String id, boolean dyeable, boolean emissive) {
+            this.id = id; this.dyeable = dyeable; this.emissive = emissive;
+            types.add(this);
+        }
+
+        private Variant(String id) {
+            this(id, true, false);
+        }
+
+        public static Variant get(int id) {
+            return types.get(id);
+        }
+
+        public static int getID(Variant v) {
+            return Objects.requireNonNull(types.indexOf(v));
+        }
     }
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -61,6 +104,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         super.defineSynchedData();
         entityData.define(ACTIVITY, OptionalInt.of(BuiltInRegistries.ACTIVITY.getId(Activity.IDLE)));
         entityData.define(GUZZLING, false);
+        entityData.define(VARIANT_ID, Variant.getID(Variant.NORMAL));
     }
 
     @Override
@@ -81,7 +125,9 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
 
     @Override
     public InteractionResult interactAt(Player player, Vec3 hitPos, InteractionHand hand) {
-        return super.interactAt(player, hitPos, hand);
+        if (level().isClientSide) return InteractionResult.SUCCESS;
+        entityData.set(VARIANT_ID, variant().equals(Variant.NORMAL) ? player.getRandom().nextIntBetweenInclusive(1, 15) : Variant.getID(Variant.NORMAL));
+        return InteractionResult.SUCCESS;
     }
 
     @Override
@@ -127,7 +173,6 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         if (source.getDirectEntity() instanceof LivingEntity attacker && attacker.getMainHandItem().is(ItemTags.AXES)) {
             if (level() instanceof ServerLevel serverLevel) {
                 BuniRegistry.BUNI.get().spawn(serverLevel, null, clone -> {
-//                    clone.load(saveWithoutId(new CompoundTag()));
                     clone.deserializeNBT(serializeNBT());
                     clone.setUUID(UUID.randomUUID());
                     ItemStack stack = getInventory().getItem(0);
@@ -154,6 +199,14 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
             if (pos != null) this.knockback(2, pos.x - this.getX(), pos.z - this.getZ());
         }
         return false;
+    }
+
+    public void setVariant(Variant v) {
+        this.entityData.set(VARIANT_ID, Variant.getID(v));
+    }
+
+    public Variant variant() {
+        return Variant.get(this.entityData.get(VARIANT_ID));
     }
 
     @Override

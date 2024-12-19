@@ -20,6 +20,7 @@ public class BuniMod {
     eventBus.addListener(BuniActivity::registerActivities);
     eventBus.addListener(BuniAi::registerSensorsAndMemories);
     eventBus.addListener(BuniDatagen::generateData);
+    eventBus.addListener(BuniSpawnModifier::prioritizeOrigin);
   }
 
 //  @SubscribeEvent
