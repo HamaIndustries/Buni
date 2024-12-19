@@ -38,6 +38,7 @@ public class BuniRenderer extends GeoEntityRenderer<Buni> {
         super(renderManager, new BuniModel());
         addRenderLayer(new OptionalGlowingGeoLayer(this));
         addRenderLayer(new FastBoneFilterGeoLayer<>(this, () -> List.of("mallet"), this::updateMalletVisibility));
+        addRenderLayer(new FastBoneFilterGeoLayer<>(this, () -> List.of("tube"), this::updateTubeVisibility));
         addRenderLayer(new FastBoneFilterGeoLayer<>(this, () -> List.of("glasses"),
                 (bone, buni, ticks) -> bone.setHidden(!buni.getName().getString().equals("yuki"))
         ));
@@ -47,6 +48,10 @@ public class BuniRenderer extends GeoEntityRenderer<Buni> {
 
     public void updateMalletVisibility(GeoBone bone, Buni buni, float partialTicks) {
         bone.setHidden(buni.activity() != BuniActivity.ATTACK);
+    }
+
+    public void updateTubeVisibility(GeoBone bone, Buni buni, float partialTicks) {
+        bone.setHidden(!buni.isInWater());
     }
 
     @Override

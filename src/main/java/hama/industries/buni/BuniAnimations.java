@@ -14,6 +14,7 @@ public class BuniAnimations {
     public static final RawAnimation ATTACK = RawAnimation.begin().thenPlay("animation.buni.attack");
     public static final RawAnimation TUMBLE = RawAnimation.begin().thenPlay("animation.buni.tumble");
     public static final RawAnimation GRABBED = RawAnimation.begin().thenPlay("animation.buni.grabbed");
+    public static final RawAnimation SWIM = RawAnimation.begin().thenPlay("animation.buni.swim");
     public static final RawAnimation LOAF = RawAnimation.begin().thenPlay("animation.buni.loaf");
 
     public static void registerControllers(Buni buni, AnimatableManager.ControllerRegistrar controllers) {
@@ -23,7 +24,9 @@ public class BuniAnimations {
                     if (buni.activity() instanceof BuniActivity buniActivity) {
                         return state.setAndContinue(buniActivity.animation);
                     }
-                    return state.setAndContinue(state.isMoving() ? RUN : IDLE);
+                    return state.setAndContinue(
+                            buni.isInWater() ? SWIM : state.isMoving() ? RUN : IDLE
+                    );
                 })
         );
     }
