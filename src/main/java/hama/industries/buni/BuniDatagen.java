@@ -8,6 +8,7 @@ import net.minecraft.data.tags.TagsProvider;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
+import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.data.event.GatherDataEvent;
@@ -27,6 +28,11 @@ public class BuniDatagen {
                         BuniMod.MODID,
                         event.getExistingFileHelper()
         ));
+
+        event.getGenerator().addProvider(
+                event.includeClient(),
+                (DataProvider.Factory<BuniItemModelsProvider>) (PackOutput output) -> new BuniItemModelsProvider(output, event.getExistingFileHelper())
+        );
     }
 
     public static class BuniItemTagsProvider extends ItemTagsProvider {
@@ -46,6 +52,17 @@ public class BuniDatagen {
                             Items.TALL_GRASS,
                             Items.SEAGRASS
                     );
+        }
+    }
+
+    public static class BuniItemModelsProvider extends ItemModelProvider {
+        public BuniItemModelsProvider(PackOutput output, ExistingFileHelper existingFileHelper) {
+            super(output, BuniMod.MODID, existingFileHelper);
+        }
+
+        @Override
+        protected void registerModels() {
+            basicItem(BuniRegistry.BUNI_ITEM.get());
         }
     }
 }

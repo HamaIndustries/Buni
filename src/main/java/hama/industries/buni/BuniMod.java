@@ -21,6 +21,7 @@ public class BuniMod {
     eventBus.addListener(BuniActivity::registerActivities);
     eventBus.addListener(BuniAi::registerSensorsAndMemories);
     eventBus.addListener(BuniDatagen::generateData);
+    BuniRegistry.init(eventBus);
     MinecraftForge.EVENT_BUS.addListener(BuniSpawner::tickSpawnBunis);
   }
 

@@ -155,8 +155,10 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         if (stack.getItem() instanceof DyeItem dye ) {
             entityData.set(VARIANT_ID, Variant.getID(Objects.requireNonNull(Variant.get(dye.getDyeColor()))));
             return InteractionResult.CONSUME;
+        } else if (stack.isEmpty()) {
+            player.setItemInHand(hand, BuniItem.of(this));
+            this.discard();
         }
-        entityData.set(VARIANT_ID, variant().equals(Variant.WHITE) ? player.getRandom().nextIntBetweenInclusive(1, 15) : Variant.getID(Variant.WHITE));
         return InteractionResult.SUCCESS;
     }
 
