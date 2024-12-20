@@ -5,13 +5,17 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.DebugPackets;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.util.Mth;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
@@ -30,6 +34,9 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -46,13 +53,14 @@ import java.util.UUID;
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
+    public static final int TICKS_TO_DESPAWN = 20 * 120;
+
     public static final EntityDataAccessor<OptionalInt> ACTIVITY = SynchedEntityData.defineId(Buni.class, EntityDataSerializers.OPTIONAL_UNSIGNED_INT);
     public static final EntityDataAccessor<Boolean> GUZZLING = SynchedEntityData.defineId(Buni.class, EntityDataSerializers.BOOLEAN);
     public static final EntityDataAccessor<Integer> VARIANT_ID = SynchedEntityData.defineId(Buni.class,  EntityDataSerializers.INT);
 
     public static AttributeSupplier.Builder createAttributes() {
-        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 3.0D).add(Attributes.MOVEMENT_SPEED, (double)0.3F);
-    }
+        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 3.0).add(Attributes.MOVEMENT_SPEED, 0.3d).add(Attributes.ATTACK_DAMAGE, 2);    }
 
     public record Variant(String id, DyeColor color, boolean emissive) {
         private static final List<Variant> types = new ObjectArrayList<>();
@@ -102,8 +110,13 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         }
     }
 
+    public record BuniGroupData(Variant variant) implements SpawnGroupData {}
+
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private final SimpleContainer inventory = new SimpleContainer(1);
+    private int hatred;
+    private int despawnTicks;
+    public int tumblingTicks;
 
     protected Buni(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
@@ -164,7 +177,12 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     }
 
     public boolean hasEmissive() {
-        return false;
+        return variant().emissive();
+    }
+
+    @Override
+    public void checkDespawn() {
+        super.checkDespawn();
     }
 
     public boolean hasItem() {
@@ -176,17 +194,36 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     }
 
     @Override
+    public void aiStep() {
+        super.aiStep();
+        if (this.swinging) {
+            ++this.swingTime;
+            if (this.swingTime >= 10) {
+                this.swingTime = 0;
+                this.swinging = false;
+            }
+        } else {
+            this.swingTime = 0;
+        }
+    }
+
+    @Override
     protected void customServerAiStep() {
         this.getBrain().tick((ServerLevel) this.level(), this);
         BuniAi.updateActivity(this);
         this.entityData.set(ACTIVITY,
                 getBrain().getActiveNonCoreActivity().map(act -> OptionalInt.of(BuiltInRegistries.ACTIVITY.getId(act))).orElse(OptionalInt.empty())
         );
+        hatred = Math.max(0, hatred-1);
+        tumblingTicks++;
     }
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
         Vec3 pos = source.getSourcePosition();
+        if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            return super.hurt(source, amount);
+        }
         if (source.getDirectEntity() instanceof LivingEntity attacker && attacker.getMainHandItem().is(ItemTags.AXES)) {
             if (level() instanceof ServerLevel serverLevel) {
                 BuniRegistry.BUNI.get().spawn(serverLevel, null, clone -> {
@@ -215,7 +252,71 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
             }
             if (pos != null) this.knockback(2, pos.x - this.getX(), pos.z - this.getZ());
         }
+
+        if (source.getDirectEntity() instanceof LivingEntity living) {
+            this.annoyedBy(living);
+        }
         return false;
+    }
+
+    @Override
+    public void knockback(double p_147241_, double x, double z) {
+        if (!level().isClientSide) {
+            tumblingTicks = 0;
+            getBrain().setMemory(BuniAi.TUMBLING, true);
+            getBrain().setActiveActivityIfPossible(BuniActivity.TUMBLE);
+        }
+        super.knockback(p_147241_, x, z);
+        this.setYRot((float)Mth.atan2(z, x));
+    }
+
+    private static final Variant[] COMMON_BUNS = { Variant.WHITE, Variant.GRAY, Variant.BLACK };
+    private static final Variant[] UNCOMMON_BUNS = { Variant.PINK, Variant.RED, Variant.ORANGE };
+    private static final Variant[] RARE_BUNS = { Variant.PURPLE, Variant.DIAMOND, Variant.LIME, Variant.BLUE };
+
+    public static BuniGroupData makeNaturalGroupData(LevelAccessor levelAccessor) {
+        Variant variant;
+        var key = levelAccessor.registryAccess().registry(Registries.DIMENSION_TYPE).get().getKey(levelAccessor.dimensionType());
+        if (key.equals(BuiltinDimensionTypes.NETHER.location())) {
+            variant = Variant.NETHER;
+        } else if (key.equals(BuiltinDimensionTypes.END.location())) {
+            variant = Variant.ENDER;
+        } else {
+            float chance = levelAccessor.getRandom().nextFloat();
+            if (chance < 0.01) {
+                variant = RARE_BUNS[Mth.abs(levelAccessor.getRandom().nextInt()) % RARE_BUNS.length];
+            } else if (chance < 0.1) {
+                variant = UNCOMMON_BUNS[Mth.abs(levelAccessor.getRandom().nextInt()) % UNCOMMON_BUNS.length];
+            } else {
+                variant = COMMON_BUNS[Mth.abs(levelAccessor.getRandom().nextInt()) % COMMON_BUNS.length];
+            }
+        }
+        return new BuniGroupData(variant);
+    }
+
+    @Override
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor levelAccessor, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData groupData, @Nullable CompoundTag p_21438_) {
+        if (!(groupData instanceof BuniGroupData)) {
+            groupData = spawnType == MobSpawnType.NATURAL ? makeNaturalGroupData(levelAccessor) : new BuniGroupData(Variant.WHITE);
+        }
+        this.setVariant(((BuniGroupData)groupData).variant);
+        return super.finalizeSpawn(levelAccessor, difficulty, spawnType, groupData, p_21438_);
+    }
+
+    protected void annoyedBy(LivingEntity attacker) {
+        if (level().isClientSide) return;
+        hatred += 1000;
+        if (hatred > 10000) {
+            hatred = 0;
+            getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, attacker);
+            getBrain().getMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES).ifPresent(
+                entities -> entities.stream().forEach(e -> {
+                    if (e instanceof Buni) {
+                        e.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, attacker);
+                    }
+                })
+            );
+        }
     }
 
     public void setVariant(Variant v) {

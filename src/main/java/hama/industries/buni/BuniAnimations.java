@@ -4,6 +4,7 @@ import software.bernie.geckolib.constant.DefaultAnimations;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
 
 public class BuniAnimations {
     public static final RawAnimation GUZZLE = RawAnimation.begin().thenPlay("animation.buni.guzzled");
@@ -21,12 +22,31 @@ public class BuniAnimations {
         controllers.add(
                 DefaultAnimations.basicPredicateController(buni, GUZZLE, UNGUZZLE, (a, b) -> buni.hasItem()),
                 new AnimationController<>(buni, "main_anim", 10, (state) -> {
-                    if (buni.activity() instanceof BuniActivity buniActivity) {
+                    if (buni.activity() instanceof BuniActivity buniActivity && buniActivity != BuniActivity.LOAF) {
+                        if (buniActivity == BuniActivity.TUMBLE) return state.setAndContinue(
+                                IDLE
+                        );
                         return state.setAndContinue(buniActivity.animation);
                     }
                     return state.setAndContinue(
-                            buni.isInWater() ? SWIM : state.isMoving() ? RUN : IDLE
+                            buni.isInWater() ? SWIM
+                                    : state.isMoving() ? RUN
+                                    : (buni.activity() == BuniActivity.LOAF) ? LOAF
+                                    : IDLE
                     );
+                }),
+                new AnimationController<>(buni, "attack", 5, state -> {
+                    if (buni.swinging)
+                        return state.setAndContinue(ATTACK);
+                    state.getController().forceAnimationReset();
+                    return PlayState.STOP;
+                }),
+                new AnimationController<>(buni, "tumble", 0, state -> {
+                    if (buni.activity() == BuniActivity.TUMBLE) {
+                        return state.setAndContinue(TUMBLE);
+                    }
+                    state.getController().forceAnimationReset();
+                    return PlayState.STOP;
                 })
         );
     }

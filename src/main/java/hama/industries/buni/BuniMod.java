@@ -1,6 +1,7 @@
 package hama.industries.buni;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -20,7 +21,7 @@ public class BuniMod {
     eventBus.addListener(BuniActivity::registerActivities);
     eventBus.addListener(BuniAi::registerSensorsAndMemories);
     eventBus.addListener(BuniDatagen::generateData);
-    eventBus.addListener(BuniSpawnModifier::prioritizeOrigin);
+    MinecraftForge.EVENT_BUS.addListener(BuniSpawner::tickSpawnBunis);
   }
 
 //  @SubscribeEvent
