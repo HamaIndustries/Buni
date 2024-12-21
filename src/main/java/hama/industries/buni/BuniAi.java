@@ -3,6 +3,7 @@ package hama.industries.buni;
 import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
+import hama.industries.buni.ai.EvilTargetingSensor;
 import hama.industries.buni.ai.LoafingBehavior;
 import hama.industries.buni.ai.LoafingSensor;
 import net.minecraft.server.level.ServerLevel;
@@ -35,6 +36,7 @@ import java.util.Set;
 public class BuniAi {
     public static final SensorType<TemptingSensor> BUNI_TEMPTATIONS = new SensorType<>(() -> new TemptingSensor(Ingredient.of(BuniTags.Items.BUNI_TEMPTATIONS)));
     public static final SensorType<LoafingSensor> LOAFING_SENSOR = new SensorType<>(LoafingSensor::new);
+    public static final SensorType<EvilTargetingSensor> EVIL_SENSOR = new SensorType<>(EvilTargetingSensor::new);
     public static final MemoryModuleType<Integer> TIME_SINCE_ACTIVITY = new MemoryModuleType<>(Optional.of(Codec.INT));
     public static final MemoryModuleType<Boolean> WANTS_TO_LOAF = new MemoryModuleType<>(Optional.of(Codec.BOOL));
     public static final MemoryModuleType<Boolean> TUMBLING = new MemoryModuleType<>(Optional.of(Codec.BOOL));
@@ -43,7 +45,8 @@ public class BuniAi {
             SensorType.NEAREST_LIVING_ENTITIES,
             SensorType.NEAREST_ITEMS,
             BUNI_TEMPTATIONS,
-            LOAFING_SENSOR
+            LOAFING_SENSOR,
+            EVIL_SENSOR
     );
 
     public static final ImmutableList<? extends MemoryModuleType<?>> MEMORY_TYPES = ImmutableList.of(
@@ -195,6 +198,7 @@ public class BuniAi {
     public static void registerSensorsAndMemories(RegisterEvent event) {
         event.register(ForgeRegistries.SENSOR_TYPES.getRegistryKey(), BuniMod.id("buni_temptations"), () -> BUNI_TEMPTATIONS);
         event.register(ForgeRegistries.SENSOR_TYPES.getRegistryKey(), BuniMod.id("loafing"), () -> LOAFING_SENSOR);
+        event.register(ForgeRegistries.SENSOR_TYPES.getRegistryKey(), BuniMod.id("evil"), () -> EVIL_SENSOR);
         event.register(ForgeRegistries.MEMORY_MODULE_TYPES.getRegistryKey(), BuniMod.id("time_since_activity"), () -> TIME_SINCE_ACTIVITY);
         event.register(ForgeRegistries.MEMORY_MODULE_TYPES.getRegistryKey(), BuniMod.id("wants_to_loaf"), () -> WANTS_TO_LOAF);
         event.register(ForgeRegistries.MEMORY_MODULE_TYPES.getRegistryKey(), BuniMod.id("tumbling"), () -> TUMBLING);

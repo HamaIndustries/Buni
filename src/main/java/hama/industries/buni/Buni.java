@@ -71,7 +71,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 3.0).add(Attributes.MOVEMENT_SPEED, 0.3d).add(Attributes.ATTACK_DAMAGE, 2);    }
 
-    public record Variant(String id, DyeColor color, boolean emissive) {
+    public record Variant(String id, @Nullable DyeColor color, boolean emissive) {
         private static final List<Variant> types = new ObjectArrayList<>();
         public static final Variant WHITE = new Variant("white", DyeColor.WHITE);
         public static final Variant BLACK = new Variant("black", DyeColor.BLACK);
@@ -114,7 +114,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         }
 
         @Nullable  public static Variant get(DyeColor color) {
-            for (var v : types) if (v.color.equals(color)) return v;
+            for (var v : types) if (v.color != null && v.color.equals(color)) return v;
             return null;
         }
     }
@@ -128,6 +128,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     private int hatred;
     public int tumblingTicks;
     private int ticksSinceLastSound;
+    private boolean evil;
 
     protected Buni(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
@@ -162,12 +163,13 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
 
     @Override
     public InteractionResult interactAt(Player player, Vec3 hitPos, InteractionHand hand) {
-        if (level().isClientSide) return InteractionResult.SUCCESS;
         ItemStack stack = player.getItemInHand(hand);
         if (stack.getItem() instanceof DyeItem dye ) {
+            if (level().isClientSide) return InteractionResult.SUCCESS;
             entityData.set(VARIANT_ID, Variant.getID(Objects.requireNonNull(Variant.get(dye.getDyeColor()))));
             return InteractionResult.CONSUME;
         } else if (stack.isEmpty()) {
+            if (level().isClientSide) return InteractionResult.SUCCESS;
             player.setItemInHand(hand, BuniItem.of(this));
             this.discard();
             return InteractionResult.SUCCESS;
@@ -208,6 +210,8 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         return BuiltInRegistries.ACTIVITY.getHolder(entityData.get(ACTIVITY).orElse(-1)).map(Holder::get).orElse(Activity.IDLE);
     }
 
+    public boolean isEvil() { return evil; }
+
     @Override
     public void aiStep() {
         super.aiStep();
@@ -236,7 +240,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     @Override
     public boolean hurt(DamageSource source, float amount) {
         Vec3 pos = source.getSourcePosition();
-        if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+        if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) || isEvil()) {
             return super.hurt(source, amount);
         }
         if (source.getDirectEntity() instanceof LivingEntity attacker && attacker.getMainHandItem().is(ItemTags.AXES)) {
@@ -426,6 +430,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         super.addAdditionalSaveData(tag);
         writeInventoryToTag(tag);
         tag.putInt("buni_variant", variant().index());
+        tag.putBoolean("evil", evil);
     }
 
     @Override
@@ -434,6 +439,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         readInventoryFromTag(tag);
         entityData.set(GUZZLING, !getInventory().isEmpty());
         setVariant(Variant.get(tag.getInt("buni_variant")));
+        evil = tag.getBoolean("evil");
     }
 
     private float varyPitch(float pitch, float variance) {

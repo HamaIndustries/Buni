@@ -54,11 +54,11 @@ public class BuniSpawner {
                     bun.setPos(spawnPos.above().getCenter());
                     level.addFreshEntity(bun);
                 }
-                BuniMod.LOGGER.info("spawned buni at " + spawnPos);
+//                BuniMod.LOGGER.info("spawned buni at " + spawnPos);
             } else {
-                BuniMod.LOGGER.info("failed to spawn buni at " + spawnPos);
+//                BuniMod.LOGGER.info("failed to spawn buni at " + spawnPos);
             }
-            BuniMod.LOGGER.info("total: "  + spawnCount);
+//            BuniMod.LOGGER.info("total: "  + spawnCount);
         });
     }
 }
