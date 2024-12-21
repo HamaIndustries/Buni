@@ -17,7 +17,7 @@ public class BuniSpawner {
      */
 
     // once every 2 minutes
-    public static final double BASE_SPAWN_CHANCE_PER_TICK = 1d/3600;
+    public static final double BASE_SPAWN_CHANCE_PER_TICK = 1d/800;
     public static final int MAX_SPAWN_RADIUS = 40;
     public static final int MIN_SPAWN_RADIUS = 20;
     public static final int SPAWN_WIDTH = MAX_SPAWN_RADIUS - MIN_SPAWN_RADIUS;

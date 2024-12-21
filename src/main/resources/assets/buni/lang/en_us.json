@@ -1,4 +1,9 @@
 {
   "entity.buni.buni": "Buni",
-  "item.buni.buni": "Buni"
+  "item.buni.buni": "Buni",
+  "buni.entity.buni.hit": "Buni Hit",
+  "buni.entity.buni.death": "Buni Explodes",
+  "buni.entity.buni.idle": "Buni Chirps",
+  "buni.entity.buni.Guzzle": "Buni Guzzles",
+  "buni.entity.buni.Attack": "Buni Attack"
 }

@@ -1,0 +1,37 @@
+{
+  "entity.buni.attack": {
+    "sounds": [
+      "buni:entity/buni/attack"
+    ]
+  },
+  "entity.buni.death": {
+    "category": "entity",
+    "sounds": [
+      "buni:entity/buni/death1",
+      "buni:entity/buni/death2",
+      "buni:entity/buni/death3"
+    ]
+  },
+  "entity.buni.guzzle": {
+    "category": "entity",
+    "sounds": [
+      "buni:entity/buni/guzzle"
+    ]
+  },
+  "entity.buni.hit": {
+    "category": "entity",
+    "sounds": [
+      "buni:entity/buni/hit"
+    ]
+  },
+  "entity.buni.idle": {
+    "category": "entity",
+    "sounds": [
+      "buni:entity/buni/idle1",
+      "buni:entity/buni/idle2",
+      "buni:entity/buni/idle3",
+      "buni:entity/buni/idle4",
+      "buni:entity/buni/idle5"
+    ]
+  }
+}

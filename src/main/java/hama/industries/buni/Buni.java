@@ -30,14 +30,23 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.Tags;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -52,8 +61,8 @@ import java.util.UUID;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
+@Mod.EventBusSubscriber
 public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
-    public static final int TICKS_TO_DESPAWN = 20 * 120;
 
     public static final EntityDataAccessor<OptionalInt> ACTIVITY = SynchedEntityData.defineId(Buni.class, EntityDataSerializers.OPTIONAL_UNSIGNED_INT);
     public static final EntityDataAccessor<Boolean> GUZZLING = SynchedEntityData.defineId(Buni.class, EntityDataSerializers.BOOLEAN);
@@ -112,16 +121,19 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
 
     public record BuniGroupData(Variant variant) implements SpawnGroupData {}
 
+    private static final int MIN_TICKS_TO_PLAY_SOUND = 10 * 20;
+
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private final SimpleContainer inventory = new SimpleContainer(1);
     private int hatred;
-    private int despawnTicks;
     public int tumblingTicks;
+    private int ticksSinceLastSound;
 
     protected Buni(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
         setCanPickUpLoot(canPickUpLoot());
         entityData.set(GUZZLING, !getInventory().isEmpty());
+        ticksSinceLastSound = (int)(getRandom().nextFloat() *  MIN_TICKS_TO_PLAY_SOUND);
     }
 
     @Override
@@ -158,8 +170,9 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         } else if (stack.isEmpty()) {
             player.setItemInHand(hand, BuniItem.of(this));
             this.discard();
+            return InteractionResult.SUCCESS;
         }
-        return InteractionResult.SUCCESS;
+        return super.interactAt(player, hitPos, hand);
     }
 
     @Override
@@ -252,13 +265,29 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
                 getInventory().removeAllItems().forEach(this::spawnAtLocation);
                 this.entityData.set(GUZZLING, false);
             }
-            if (pos != null) this.knockback(2, pos.x - this.getX(), pos.z - this.getZ());
+            if (pos != null) {
+                this.knockback(2, pos.x - this.getX(), pos.z - this.getZ());
+                ticksSinceLastSound = 0;
+                playSound(BuniSounds.HIT.get(), 0.8f, varyPitch(1, 0.1f));
+            }
         }
 
         if (source.getDirectEntity() instanceof LivingEntity living) {
             this.annoyedBy(living);
         }
         return false;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (!level().isClientSide) {
+            ticksSinceLastSound++;
+            if (ticksSinceLastSound > MIN_TICKS_TO_PLAY_SOUND && random.nextFloat() < 0.1) {
+                ticksSinceLastSound = 0;
+                playSound(BuniSounds.IDLE.get(), 0.8f, varyPitch(1, 0.1f));
+            }
+        }
     }
 
     @Override
@@ -275,6 +304,18 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     private static final Variant[] COMMON_BUNS = { Variant.WHITE, Variant.GRAY, Variant.BLACK };
     private static final Variant[] UNCOMMON_BUNS = { Variant.PINK, Variant.RED, Variant.ORANGE };
     private static final Variant[] RARE_BUNS = { Variant.PURPLE, Variant.DIAMOND, Variant.LIME, Variant.BLUE };
+
+    @Override
+    public void swing(InteractionHand p_21007_) {
+        super.swing(p_21007_);
+    }
+
+    @Override
+    public boolean doHurtTarget(Entity p_21372_) {
+        boolean result = super.doHurtTarget(p_21372_);
+        if (result && !level().isClientSide) this.playSound(BuniSounds.ATTACK.get());
+        return result;
+    }
 
     public static BuniGroupData makeNaturalGroupData(LevelAccessor levelAccessor) {
         Variant variant;
@@ -310,15 +351,19 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         hatred += 1000;
         if (hatred > 10000) {
             hatred = 0;
-            getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, attacker);
-            getBrain().getMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES).ifPresent(
+            killThisGuy(attacker);
+        }
+    }
+
+    private void killThisGuy(LivingEntity target) {
+        getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
+        getBrain().getMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES).ifPresent(
                 entities -> entities.stream().forEach(e -> {
                     if (e instanceof Buni) {
-                        e.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, attacker);
+                        e.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
                     }
                 })
-            );
-        }
+        );
     }
 
     public void setVariant(Variant v) {
@@ -332,7 +377,33 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     @Override
     protected void pickUpItem(ItemEntity item) {
         InventoryCarrier.pickUpItem(this, this, item);
-        if (!level().isClientSide) entityData.set(GUZZLING, !getInventory().isEmpty());
+        if (!level().isClientSide) {
+            entityData.set(GUZZLING, !getInventory().isEmpty());
+            playSound(BuniSounds.GUZZLE.get(), 0.8f, varyPitch(1, 0.15f));
+
+            CraftingContainer craftingcontainer = new TransientCraftingContainer(new AbstractContainerMenu((MenuType)null, -1) {
+                public ItemStack quickMoveStack(Player p_218264_, int p_218265_) {
+                    return ItemStack.EMPTY;
+                }
+                public boolean stillValid(Player p_29888_) {
+                    return false;
+                }
+            }, 1, 1);
+
+            ItemStack stack = item.getItem();
+            craftingcontainer.setItem(0, stack);
+            ItemStack result = this.level().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingcontainer, this.level()).map(
+                    recipe -> recipe.assemble(craftingcontainer, this.level().registryAccess())
+            ).orElse(null);
+
+            if (result != null && result.is(Tags.Items.DYES)) {
+                int amount = stack.getCount() * result.getCount() * 2;
+                getInventory().setItem(0, result.copyWithCount(amount));
+                if (amount > stack.getMaxStackSize()) {
+                    spawnAtLocation(result.copyWithCount(amount - stack.getMaxStackSize()));
+                }
+            }
+        };
     }
 
     @Override
@@ -363,5 +434,21 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         readInventoryFromTag(tag);
         entityData.set(GUZZLING, !getInventory().isEmpty());
         setVariant(Variant.get(tag.getInt("buni_variant")));
+    }
+
+    private float varyPitch(float pitch, float variance) {
+        return (random.nextFloat() - 0.5f) * variance + pitch;
+    }
+
+    @SubscribeEvent
+    public static void protecc(LivingDamageEvent event) {
+        if (event.getEntity() instanceof Player player) {
+            if (player.level().isClientSide) return;
+            if (event.getSource().getDirectEntity() instanceof LivingEntity attacker && !(attacker instanceof Buni)){
+                player.level().getEntitiesOfClass(Buni.class, player.getBoundingBox().inflate(20)).stream()
+                        .findAny()
+                        .ifPresent(b -> b.killThisGuy(attacker));
+            }
+        }
     }
 }
