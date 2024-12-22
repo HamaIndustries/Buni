@@ -88,6 +88,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         public static final Variant PURPLE = new Variant("purple", DyeColor.PURPLE);
         public static final Variant RED = new Variant("red", DyeColor.RED);
         public static final Variant YELLOW = new Variant("yellow", DyeColor.YELLOW);
+        public static final Variant BROWN = new Variant("brown", DyeColor.BROWN);
         public static final Variant DIAMOND = new Variant("diamond", null, true);
         public static final Variant ENDER = new Variant("ender", null, true);
         public static final Variant NETHER = new Variant("nether", null, true);
@@ -305,8 +306,8 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         this.setYRot((float)Mth.atan2(z, x));
     }
 
-    private static final Variant[] COMMON_BUNS = { Variant.WHITE, Variant.GRAY, Variant.BLACK };
-    private static final Variant[] UNCOMMON_BUNS = { Variant.PINK, Variant.RED, Variant.ORANGE };
+    private static final Variant[] COMMON_BUNS = { Variant.WHITE, Variant.GRAY, Variant.BROWN };
+    private static final Variant[] UNCOMMON_BUNS = { Variant.PINK, Variant.RED, Variant.ORANGE, Variant.BLACK };
     private static final Variant[] RARE_BUNS = { Variant.PURPLE, Variant.DIAMOND, Variant.LIME, Variant.BLUE };
 
     @Override
