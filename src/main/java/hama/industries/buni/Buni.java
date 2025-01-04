@@ -430,7 +430,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
 
     @Override
     public boolean canPickUpLoot() {
-        return getBrain().checkMemory(MemoryModuleType.ITEM_PICKUP_COOLDOWN_TICKS, MemoryStatus.VALUE_ABSENT);
+        return !isEvil() && getBrain().checkMemory(MemoryModuleType.ITEM_PICKUP_COOLDOWN_TICKS, MemoryStatus.VALUE_ABSENT);
     }
 
     @Override

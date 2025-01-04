@@ -25,6 +25,7 @@ public class BuniSpawner {
 
     public static void tickSpawnBunis(TickEvent.ServerTickEvent event) {
         MinecraftServer server = event.getServer();
+        if (!server.getGameRules().getRule(BuniGameRules.RULE_NATURAL_BUNI_SPAWNS).get()) return;
 
         server.getPlayerList().getPlayers().stream().filter(LivingEntity::isAlive).forEach(player -> {
             ServerLevel level = (ServerLevel) player.level();

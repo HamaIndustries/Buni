@@ -16,7 +16,6 @@ public class BuniMod {
 
   public BuniMod() {
     IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
-    BuniRegistry.ENTITIES.register(eventBus);
     eventBus.addListener(BuniRegistry::registerAttributes);
     eventBus.addListener(BuniActivity::registerActivities);
     eventBus.addListener(BuniAi::registerSensorsAndMemories);
@@ -24,6 +23,7 @@ public class BuniMod {
     BuniRegistry.init(eventBus);
     BuniSounds.init(eventBus);
     MinecraftForge.EVENT_BUS.addListener(BuniSpawner::tickSpawnBunis);
+    BuniGameRules.init();
   }
 
 //  @SubscribeEvent

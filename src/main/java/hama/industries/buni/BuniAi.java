@@ -154,7 +154,7 @@ public class BuniAi {
                 BuniActivity.TUMBLE, ImmutableList.of(
                         Pair.of(0, new DoNothing(10, 10)),
                         Pair.of(1, EraseMemoryIf.create(e -> {
-                            boolean landed = e.onGround() && e.tumblingTicks > 3;
+                            boolean landed = e.isPassenger() || (e.onGround() && e.tumblingTicks > 3);
                             if (landed) e.thrower = null;
                             return landed;
                         }, TUMBLING))

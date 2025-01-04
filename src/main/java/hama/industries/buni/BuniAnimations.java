@@ -30,7 +30,7 @@ public class BuniAnimations {
                         state.setData(LOOK_AROUND, false);
                         currentAnim = buniActivity == BuniActivity.TUMBLE ? IDLE : buniActivity.animation;
                     } else {
-                        state.setData(LOOK_AROUND, true);
+                        state.setData(LOOK_AROUND, !buni.isInWater());
                         currentAnim = buni.isInWater() ? SWIM
                                 : state.isMoving() ? RUN
                                 : (buni.activity() == BuniActivity.LOAF) ? LOAF

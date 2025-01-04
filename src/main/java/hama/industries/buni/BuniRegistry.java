@@ -28,6 +28,8 @@ public class BuniRegistry {
   }
 
   public static void init(IEventBus bus) {
+    ENTITIES.register(bus);
     ITEMS.register(bus);
+
   }
 }

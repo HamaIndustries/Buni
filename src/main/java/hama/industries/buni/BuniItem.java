@@ -19,6 +19,9 @@ public class BuniItem extends Item {
     public static ItemStack of(Buni buni) {
         ItemStack stack = BuniRegistry.BUNI_ITEM.get().getDefaultInstance();
         stack.addTagElement("stored_buni", buni.serializeNBT());
+        if (buni.hasCustomName()) {
+            stack.setHoverName(buni.getCustomName());
+        }
         return stack;
     }
 
@@ -33,6 +36,9 @@ public class BuniItem extends Item {
                 e.setPos(player.getEyePosition().add(look));
                 e.knockback(2, -look.x, -look.z);
                 e.thrower = player;
+                if (stack.hasCustomHoverName()) {
+                    e.setCustomName(stack.getHoverName());
+                }
             }, player.getOnPos(), MobSpawnType.BUCKET, true, false);
         }
         return InteractionResultHolder.sidedSuccess(ItemStack.EMPTY, level.isClientSide);
