@@ -44,7 +44,9 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.Tags;
+import net.minecraftforge.event.entity.EntityMobGriefingEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
+import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -457,5 +459,17 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
                         .ifPresent(b -> b.killThisGuy(attacker));
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void overrideMobGriefing(EntityMobGriefingEvent event) {
+        if (event.getEntity().getType().equals(BuniRegistry.BUNI.get())) {
+            event.setResult(Event.Result.ALLOW);
+        }
+    }
+
+    @Override
+    public double getMyRidingOffset() {
+        return super.getMyRidingOffset() + 0.15;
     }
 }
