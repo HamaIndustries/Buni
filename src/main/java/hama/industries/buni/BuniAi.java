@@ -11,7 +11,25 @@ import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.Brain;
-import net.minecraft.world.entity.ai.behavior.*;
+import net.minecraft.world.entity.ai.behavior.BehaviorControl;
+import net.minecraft.world.entity.ai.behavior.CountDownCooldownTicks;
+import net.minecraft.world.entity.ai.behavior.DoNothing;
+import net.minecraft.world.entity.ai.behavior.EraseMemoryIf;
+import net.minecraft.world.entity.ai.behavior.FollowTemptation;
+import net.minecraft.world.entity.ai.behavior.GoToWantedItem;
+import net.minecraft.world.entity.ai.behavior.LookAtTargetSink;
+import net.minecraft.world.entity.ai.behavior.MeleeAttack;
+import net.minecraft.world.entity.ai.behavior.MoveToTargetSink;
+import net.minecraft.world.entity.ai.behavior.OneShot;
+import net.minecraft.world.entity.ai.behavior.RandomStroll;
+import net.minecraft.world.entity.ai.behavior.RunOne;
+import net.minecraft.world.entity.ai.behavior.SetEntityLookTargetSometimes;
+import net.minecraft.world.entity.ai.behavior.SetLookAndInteract;
+import net.minecraft.world.entity.ai.behavior.SetWalkTargetFromAttackTargetIfTargetOutOfReach;
+import net.minecraft.world.entity.ai.behavior.SetWalkTargetFromLookTarget;
+import net.minecraft.world.entity.ai.behavior.StartAttacking;
+import net.minecraft.world.entity.ai.behavior.StopAttackingIfTargetInvalid;
+import net.minecraft.world.entity.ai.behavior.Swim;
 import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
@@ -135,7 +153,11 @@ public class BuniAi {
         brain.addActivityAndRemoveMemoriesWhenStopped(
                 BuniActivity.TUMBLE, ImmutableList.of(
                         Pair.of(0, new DoNothing(10, 10)),
-                        Pair.of(1, EraseMemoryIf.create(e -> e.onGround() && e.tumblingTicks > 3, TUMBLING))
+                        Pair.of(1, EraseMemoryIf.create(e -> {
+                            boolean landed = e.onGround() && e.tumblingTicks > 3;
+                            if (landed) e.thrower = null;
+                            return landed;
+                        }, TUMBLING))
                 ),
                 Set.of(Pair.of(TUMBLING, MemoryStatus.VALUE_PRESENT)),
                 Set.of(TUMBLING)

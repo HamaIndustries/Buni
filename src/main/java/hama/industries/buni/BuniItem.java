@@ -32,6 +32,7 @@ public class BuniItem extends Item {
                 Vec3 look = player.getLookAngle();
                 e.setPos(player.getEyePosition().add(look));
                 e.knockback(2, -look.x, -look.z);
+                e.thrower = player;
             }, player.getOnPos(), MobSpawnType.BUCKET, true, false);
         }
         return InteractionResultHolder.sidedSuccess(ItemStack.EMPTY, level.isClientSide);

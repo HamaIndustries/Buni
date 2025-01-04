@@ -20,7 +20,13 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -124,14 +130,15 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
 
     public record BuniGroupData(Variant variant) implements SpawnGroupData {}
 
-    private static final int MIN_TICKS_TO_PLAY_SOUND = 10 * 20;
+    protected static final int MIN_TICKS_TO_PLAY_SOUND = 10 * 20;
 
-    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-    private final SimpleContainer inventory = new SimpleContainer(1);
-    private int hatred;
     public int tumblingTicks;
-    private int ticksSinceLastSound;
-    private boolean evil;
+    protected final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+    protected final SimpleContainer inventory = new SimpleContainer(1);
+    protected int hatred;
+    protected int ticksSinceLastSound;
+    protected boolean evil;
+    @Nullable protected LivingEntity thrower;
 
     protected Buni(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
@@ -294,6 +301,14 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
                 ticksSinceLastSound = 0;
                 playSound(BuniSounds.IDLE.get(), 0.8f, varyPitch(1, 0.1f));
             }
+
+            getBrain().getMemory(BuniAi.TUMBLING).ifPresent(tumbling -> {
+                if (tumbling) {
+                    for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox(), entity -> entity != this && entity != thrower)) {
+                        entity.hurt(damageSources().mobProjectile(this, thrower != null && !thrower.isRemoved() ? thrower : null), 1);
+                    }
+                }
+            });
         }
     }
 

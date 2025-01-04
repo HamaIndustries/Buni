@@ -4,6 +4,7 @@ import software.bernie.geckolib.constant.DefaultAnimations;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.DataTicket;
 import software.bernie.geckolib.core.object.PlayState;
 
 public class BuniAnimations {
@@ -18,22 +19,24 @@ public class BuniAnimations {
     public static final RawAnimation SWIM = RawAnimation.begin().thenPlay("animation.buni.swim");
     public static final RawAnimation LOAF = RawAnimation.begin().thenPlay("animation.buni.loaf");
 
+    public static final DataTicket<Boolean> LOOK_AROUND = new DataTicket<>("buni_look_around", Boolean.class);
+
     public static void registerControllers(Buni buni, AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(
                 DefaultAnimations.basicPredicateController(buni, GUZZLE, UNGUZZLE, (a, b) -> buni.hasItem()),
                 new AnimationController<>(buni, "main_anim", 10, (state) -> {
+                    RawAnimation currentAnim;
                     if (buni.activity() instanceof BuniActivity buniActivity && buniActivity != BuniActivity.LOAF) {
-                        if (buniActivity == BuniActivity.TUMBLE) return state.setAndContinue(
-                                IDLE
-                        );
-                        return state.setAndContinue(buniActivity.animation);
+                        state.setData(LOOK_AROUND, false);
+                        currentAnim = buniActivity == BuniActivity.TUMBLE ? IDLE : buniActivity.animation;
+                    } else {
+                        state.setData(LOOK_AROUND, true);
+                        currentAnim = buni.isInWater() ? SWIM
+                                : state.isMoving() ? RUN
+                                : (buni.activity() == BuniActivity.LOAF) ? LOAF
+                                : IDLE;
                     }
-                    return state.setAndContinue(
-                            buni.isInWater() ? SWIM
-                                    : state.isMoving() ? RUN
-                                    : (buni.activity() == BuniActivity.LOAF) ? LOAF
-                                    : IDLE
-                    );
+                    return state.setAndContinue(currentAnim);
                 }),
                 new AnimationController<>(buni, "attack", 5, state -> {
                     if (buni.swinging)

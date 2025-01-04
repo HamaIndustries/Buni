@@ -1,15 +1,16 @@
 package hama.industries.buni.client;
 
 import hama.industries.buni.Buni;
+import hama.industries.buni.BuniAnimations;
 import hama.industries.buni.BuniMod;
 import net.minecraft.util.Mth;
 import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
+import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.model.DefaultedEntityGeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
-
-import static hama.industries.buni.BuniAnimations.IDLE;
 
 public class BuniModel extends DefaultedEntityGeoModel<Buni> {
     public BuniModel() {
@@ -21,7 +22,10 @@ public class BuniModel extends DefaultedEntityGeoModel<Buni> {
 
         CoreGeoBone head = getAnimationProcessor().getBone("head");
 
-        if (head != null && (animationState.isCurrentAnimation(IDLE))) {
+        RawAnimation raw = animationState.getController().getCurrentRawAnimation();
+        AnimationController<Buni> controller = animationState.getController();
+
+        if (head != null && animationState.getData(BuniAnimations.LOOK_AROUND)) {
             EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
 
             head.setRotX(entityData.headPitch() * Mth.DEG_TO_RAD);
