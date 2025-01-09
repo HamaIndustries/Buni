@@ -304,7 +304,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
 
             getBrain().getMemory(BuniAi.TUMBLING).ifPresent(tumbling -> {
                 if (tumbling) {
-                    for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox(), entity -> entity != this && entity != thrower)) {
+                    for (LivingEntity entity : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox(), entity -> entity != thrower && !(entity instanceof Buni))) {
                         entity.hurt(damageSources().mobProjectile(this, thrower != null && !thrower.isRemoved() ? thrower : null), 1);
                     }
                 }
