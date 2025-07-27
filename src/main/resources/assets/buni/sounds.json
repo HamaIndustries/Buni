@@ -33,5 +33,13 @@
       "buni:entity/buni/idle4",
       "buni:entity/buni/idle5"
     ]
+  },
+  "entity.buni.repelled": {
+    "category": "entity",
+    "sounds": [
+      "buni:entity/buni/death1",
+      "buni:entity/buni/death2",
+      "buni:entity/buni/death3"
+    ]
   }
 }

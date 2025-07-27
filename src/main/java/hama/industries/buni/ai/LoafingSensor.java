@@ -21,7 +21,7 @@ public class LoafingSensor extends Sensor<Buni> {
         if (currentActivity.filter(activity -> activity == Activity.IDLE).isPresent()) {
             int time = brain.getMemory(BuniAi.TIME_SINCE_ACTIVITY).orElse(0) + 1;
             brain.setMemory(BuniAi.TIME_SINCE_ACTIVITY, Optional.of(time));
-            if (time > SECONDS_TO_LOAF && buni.getRandom().nextFloat() < 0.1) {
+            if (!buni.isRepelled() && time > SECONDS_TO_LOAF && buni.getRandom().nextFloat() < 0.1) {
                 brain.setMemory(BuniAi.WANTS_TO_LOAF, true);
             }
         }

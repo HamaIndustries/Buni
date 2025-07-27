@@ -9,8 +9,7 @@ import hama.industries.buni.ai.LoafingSensor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.behavior.*;
 import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
@@ -19,11 +18,8 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.sensing.Sensor;
 import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.entity.ai.sensing.TemptingSensor;
-import net.minecraft.world.entity.monster.piglin.Piglin;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
 
@@ -31,7 +27,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-@Mod.EventBusSubscriber
 public class BuniAi {
     public static final SensorType<TemptingSensor> BUNI_TEMPTATIONS = new SensorType<>(() -> new TemptingSensor(Ingredient.of(BuniTags.Items.BUNI_TEMPTATIONS)));
     public static final SensorType<LoafingSensor> LOAFING_SENSOR = new SensorType<>(LoafingSensor::new);
@@ -66,6 +61,7 @@ public class BuniAi {
             MemoryModuleType.DANCING,
             MemoryModuleType.ITEM_PICKUP_COOLDOWN_TICKS,
             MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM,
+            MemoryModuleType.NEAREST_REPELLENT,
             TIME_SINCE_ACTIVITY,
             WANTS_TO_LOAF,
             TUMBLING
@@ -98,15 +94,22 @@ public class BuniAi {
         );
     }
 
+    private static BehaviorControl<PathfinderMob> avoidRepellent() {
+        return SetWalkTargetAwayFrom.pos(MemoryModuleType.NEAREST_REPELLENT, 1.0F, 16, false);
+    }
+
+    public static final int ITEM_STEAL_DISTANCE = 32;
+
     public static void initIdleActivity(Brain<Buni> brain) {
         brain.addActivityAndRemoveMemoriesWhenStopped(
                 BuniActivity.IDLE, ImmutableList.of(
                         Pair.of(0, new FollowTemptation(e -> 1f)),
-                        Pair.of(1, GoToWantedItem.create(1.5f, true, 32)),
-                        Pair.of(2, SetEntityLookTargetSometimes.create(EntityType.PLAYER, 6.0F, UniformInt.of(30, 60))),
-                        Pair.of(3, new RunOne<>(List.of(
+                        Pair.of(1, avoidRepellent()),
+                        Pair.of(2, GoToWantedItem.create(buni -> !buni.isRepelled(),1.5f, true, ITEM_STEAL_DISTANCE)),
+                        Pair.of(3, SetEntityLookTargetSometimes.create(EntityType.PLAYER, 6.0F, UniformInt.of(30, 60))),
+                        Pair.of(4, new RunOne<>(List.of(
                                 Pair.of(new DoNothing(30, 60), 2),
-                                Pair.of(StartAttacking.create(BuniAi::getRandomTarget), 1),
+                                //Pair.of(StartAttacking.create(BuniAi::getRandomTarget), 1),
                                 Pair.of(RandomStroll.stroll(1, false), 4),
                                 Pair.of(SetWalkTargetFromLookTarget.create(1f, 3), 1)
                         )))
@@ -131,35 +134,11 @@ public class BuniAi {
         );
     }
 
-    private static Optional<? extends LivingEntity> findNearestValidAttackTarget(Piglin p_35001_) {
-        Brain<Piglin> brain = p_35001_.getBrain();
-        Optional<LivingEntity> optional = BehaviorUtils.getLivingEntityFromUUIDMemory(p_35001_, MemoryModuleType.ANGRY_AT);
-        if (optional.isPresent() && Sensor.isEntityAttackableIgnoringLineOfSight(p_35001_, optional.get())) {
-            return optional;
-        } else {
-            if (brain.hasMemoryValue(MemoryModuleType.UNIVERSAL_ANGER)) {
-                Optional<Player> optional1 = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER);
-                if (optional1.isPresent()) {
-                    return optional1;
-                }
-            }
-
-            Optional<Mob> optional3 = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_NEMESIS);
-            if (optional3.isPresent()) {
-                return optional3;
-            } else {
-                Optional<Player> optional2 = brain.getMemory(MemoryModuleType.NEAREST_TARGETABLE_PLAYER_NOT_WEARING_GOLD);
-                return optional2.isPresent() && Sensor.isEntityAttackable(p_35001_, optional2.get()) ? optional2 : Optional.empty();
-            }
-        }
-    }
-
     public static void initFightActivity(Brain<Buni> brain) {
         brain.addActivityAndRemoveMemoryWhenStopped(Activity.FIGHT, 0, ImmutableList.of(
                 StopAttackingIfTargetInvalid.create(),
                 SetWalkTargetFromAttackTargetIfTargetOutOfReach.create(e -> 1f),
-                MeleeAttack.create(20),
-                stopAttackingAfterFirstHit()
+                MeleeAttack.create(20)
             ), MemoryModuleType.ATTACK_TARGET);
     }
 
@@ -187,13 +166,6 @@ public class BuniAi {
         buni.getBrain().setActiveActivityToFirstValid(
                 ImmutableList.of(BuniActivity.TUMBLE, Activity.FIGHT, BuniActivity.DANCE, BuniActivity.LOAF, Activity.IDLE)
         );
-    }
-
-    public static Optional<LivingEntity> getRandomTarget(Buni buni) {
-        if (buni.getRandom().nextFloat() > 0.01) {
-            return Optional.empty();
-        }
-        return buni.getBrain().getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES).flatMap(es -> es.findClosest(e -> buni.canAttack(e)));
     }
 
     private static BehaviorControl<Buni> stopAttackingAfterFirstHit() {
