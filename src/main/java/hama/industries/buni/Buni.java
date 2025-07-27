@@ -50,11 +50,6 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.Tags;
-import net.minecraftforge.event.entity.EntityMobGriefingEvent;
-import net.minecraftforge.event.entity.living.LivingDamageEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -69,7 +64,6 @@ import java.util.UUID;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-@Mod.EventBusSubscriber
 public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
 
     public static final EntityDataAccessor<OptionalInt> ACTIVITY = SynchedEntityData.defineId(Buni.class, EntityDataSerializers.OPTIONAL_UNSIGNED_INT);
@@ -119,7 +113,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         }
 
         public static int getID(Variant v) {
-            return Objects.requireNonNull(types.indexOf(v));
+            return types.indexOf(v);
         }
 
         @Nullable  public static Variant get(DyeColor color) {
@@ -313,13 +307,13 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     }
 
     @Override
-    public void knockback(double p_147241_, double x, double z) {
+    public void knockback(double pStrength, double x, double z) {
         if (!level().isClientSide) {
             tumblingTicks = 0;
             getBrain().setMemory(BuniAi.TUMBLING, true);
             getBrain().setActiveActivityIfPossible(BuniActivity.TUMBLE);
         }
-        super.knockback(p_147241_, x, z);
+        super.knockback(pStrength, x, z);
         this.setYRot((float)Mth.atan2(z, x));
     }
 
@@ -377,7 +371,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         }
     }
 
-    private void killThisGuy(LivingEntity target) {
+    void killThisGuy(LivingEntity target) {
         getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
         getBrain().getMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES).ifPresent(
                 entities -> entities.stream().forEach(e -> {
@@ -464,24 +458,6 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         return (random.nextFloat() - 0.5f) * variance + pitch;
     }
 
-    @SubscribeEvent
-    public static void protecc(LivingDamageEvent event) {
-        if (event.getEntity() instanceof Player player) {
-            if (player.level().isClientSide) return;
-            if (event.getSource().getDirectEntity() instanceof LivingEntity attacker && !(attacker instanceof Buni)){
-                player.level().getEntitiesOfClass(Buni.class, player.getBoundingBox().inflate(20)).stream()
-                        .findAny()
-                        .ifPresent(b -> b.killThisGuy(attacker));
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void overrideMobGriefing(EntityMobGriefingEvent event) {
-        if (event.getEntity().getType().equals(BuniRegistry.BUNI.get())) {
-            event.setResult(Event.Result.ALLOW);
-        }
-    }
 
     @Override
     public double getMyRidingOffset() {

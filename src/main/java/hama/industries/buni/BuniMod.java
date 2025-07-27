@@ -24,6 +24,7 @@ public class BuniMod {
     BuniSounds.init(eventBus);
     MinecraftForge.EVENT_BUS.addListener(BuniSpawner::tickSpawnBunis);
     BuniGameRules.init();
+    BuniEvents.init();
   }
 
 //  @SubscribeEvent
