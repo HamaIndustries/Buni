@@ -281,7 +281,11 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         }
 
         if (source.getDirectEntity() instanceof LivingEntity living) {
-            this.annoyedBy(living);
+            if (living instanceof Player) {
+                killThisGuy(living);
+            } else {
+                this.annoyedBy(living);
+            }
         }
         return false;
     }
@@ -371,10 +375,15 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         }
     }
 
+    @Override
+    public boolean canAttack(LivingEntity pTarget) {
+        return super.canAttack(pTarget);
+    }
+
     void killThisGuy(LivingEntity target) {
         getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
         getBrain().getMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES).ifPresent(
-                entities -> entities.stream().forEach(e -> {
+                entities -> entities.forEach(e -> {
                     if (e instanceof Buni) {
                         e.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
                     }

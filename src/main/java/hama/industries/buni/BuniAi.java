@@ -3,45 +3,26 @@ package hama.industries.buni;
 import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
-import hama.industries.buni.ai.EvilTargetingSensor;
+import hama.industries.buni.ai.BuniTargetingSensor;
 import hama.industries.buni.ai.LoafingBehavior;
 import hama.industries.buni.ai.LoafingSensor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.Brain;
-import net.minecraft.world.entity.ai.behavior.BehaviorControl;
-import net.minecraft.world.entity.ai.behavior.CountDownCooldownTicks;
-import net.minecraft.world.entity.ai.behavior.DoNothing;
-import net.minecraft.world.entity.ai.behavior.EraseMemoryIf;
-import net.minecraft.world.entity.ai.behavior.FollowTemptation;
-import net.minecraft.world.entity.ai.behavior.GoToWantedItem;
-import net.minecraft.world.entity.ai.behavior.LookAtTargetSink;
-import net.minecraft.world.entity.ai.behavior.MeleeAttack;
-import net.minecraft.world.entity.ai.behavior.MoveToTargetSink;
-import net.minecraft.world.entity.ai.behavior.OneShot;
-import net.minecraft.world.entity.ai.behavior.RandomStroll;
-import net.minecraft.world.entity.ai.behavior.RunOne;
-import net.minecraft.world.entity.ai.behavior.SetEntityLookTargetSometimes;
-import net.minecraft.world.entity.ai.behavior.SetLookAndInteract;
-import net.minecraft.world.entity.ai.behavior.SetWalkTargetFromAttackTargetIfTargetOutOfReach;
-import net.minecraft.world.entity.ai.behavior.SetWalkTargetFromLookTarget;
-import net.minecraft.world.entity.ai.behavior.StartAttacking;
-import net.minecraft.world.entity.ai.behavior.StopAttackingIfTargetInvalid;
-import net.minecraft.world.entity.ai.behavior.Swim;
+import net.minecraft.world.entity.ai.behavior.*;
 import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.sensing.Sensor;
 import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.entity.ai.sensing.TemptingSensor;
+import net.minecraft.world.entity.monster.piglin.Piglin;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraft.world.phys.AABB;
-import net.minecraftforge.event.VanillaGameEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
@@ -54,7 +35,7 @@ import java.util.Set;
 public class BuniAi {
     public static final SensorType<TemptingSensor> BUNI_TEMPTATIONS = new SensorType<>(() -> new TemptingSensor(Ingredient.of(BuniTags.Items.BUNI_TEMPTATIONS)));
     public static final SensorType<LoafingSensor> LOAFING_SENSOR = new SensorType<>(LoafingSensor::new);
-    public static final SensorType<EvilTargetingSensor> EVIL_SENSOR = new SensorType<>(EvilTargetingSensor::new);
+    public static final SensorType<BuniTargetingSensor> EVIL_SENSOR = new SensorType<>(BuniTargetingSensor::new);
     public static final MemoryModuleType<Integer> TIME_SINCE_ACTIVITY = new MemoryModuleType<>(Optional.of(Codec.INT));
     public static final MemoryModuleType<Boolean> WANTS_TO_LOAF = new MemoryModuleType<>(Optional.of(Codec.BOOL));
     public static final MemoryModuleType<Boolean> TUMBLING = new MemoryModuleType<>(Optional.of(Codec.BOOL));
@@ -89,20 +70,6 @@ public class BuniAi {
             WANTS_TO_LOAF,
             TUMBLING
     );
-
-    @SubscribeEvent
-    public static void updateJukeboxPlayingState(VanillaGameEvent event) {
-        int r = event.getVanillaEvent().getNotificationRadius();
-        if (event.getVanillaEvent() == GameEvent.JUKEBOX_PLAY) {
-            for (Buni bun : event.getLevel().getEntitiesOfClass(Buni.class, AABB.ofSize(event.getEventPosition(), r, r, r))) {
-                bun.getBrain().setMemoryWithExpiry(MemoryModuleType.DANCING, true, 100);
-            }
-        } else if (event.getVanillaEvent() == GameEvent.JUKEBOX_STOP_PLAY) {
-            for (Buni bun : event.getLevel().getEntitiesOfClass(Buni.class, AABB.ofSize(event.getEventPosition(), r, r, r))) {
-                bun.getBrain().eraseMemory(MemoryModuleType.DANCING);
-            }
-        }
-    }
 
     public static Brain<?> makeBrain(Brain<Buni> brain) {
         initCoreActivity(brain);
@@ -164,6 +131,29 @@ public class BuniAi {
         );
     }
 
+    private static Optional<? extends LivingEntity> findNearestValidAttackTarget(Piglin p_35001_) {
+        Brain<Piglin> brain = p_35001_.getBrain();
+        Optional<LivingEntity> optional = BehaviorUtils.getLivingEntityFromUUIDMemory(p_35001_, MemoryModuleType.ANGRY_AT);
+        if (optional.isPresent() && Sensor.isEntityAttackableIgnoringLineOfSight(p_35001_, optional.get())) {
+            return optional;
+        } else {
+            if (brain.hasMemoryValue(MemoryModuleType.UNIVERSAL_ANGER)) {
+                Optional<Player> optional1 = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER);
+                if (optional1.isPresent()) {
+                    return optional1;
+                }
+            }
+
+            Optional<Mob> optional3 = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_NEMESIS);
+            if (optional3.isPresent()) {
+                return optional3;
+            } else {
+                Optional<Player> optional2 = brain.getMemory(MemoryModuleType.NEAREST_TARGETABLE_PLAYER_NOT_WEARING_GOLD);
+                return optional2.isPresent() && Sensor.isEntityAttackable(p_35001_, optional2.get()) ? optional2 : Optional.empty();
+            }
+        }
+    }
+
     public static void initFightActivity(Brain<Buni> brain) {
         brain.addActivityAndRemoveMemoryWhenStopped(Activity.FIGHT, 0, ImmutableList.of(
                 StopAttackingIfTargetInvalid.create(),
@@ -200,8 +190,10 @@ public class BuniAi {
     }
 
     public static Optional<LivingEntity> getRandomTarget(Buni buni) {
-        return buni.getRandom().nextFloat() > 0.01 ? Optional.empty() :
-                buni.getBrain().getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES).flatMap(es -> es.findClosest(e -> buni.canAttack(e)));
+        if (buni.getRandom().nextFloat() > 0.01) {
+            return Optional.empty();
+        }
+        return buni.getBrain().getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES).flatMap(es -> es.findClosest(e -> buni.canAttack(e)));
     }
 
     private static BehaviorControl<Buni> stopAttackingAfterFirstHit() {
