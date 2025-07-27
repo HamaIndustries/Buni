@@ -282,12 +282,8 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
             }
         }
 
-        if (source.getDirectEntity() instanceof LivingEntity living) {
-            if (living instanceof Player) {
-                killThisGuy(living);
-            } else {
-                this.annoyedBy(living);
-            }
+        if (source.getEntity() instanceof LivingEntity living) {
+            this.annoyedBy(living);
         }
         return false;
     }
@@ -337,7 +333,6 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         boolean result = super.doHurtTarget(entity);
         if (result && !level().isClientSide) {
             this.playSound(BuniSounds.ATTACK.get());
-            getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
         }
         return result;
     }
@@ -375,7 +370,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         if (level().isClientSide) return;
         hatred += 1000;
         if (hatred > 10000) {
-            hatred = 0;
+            hatred = 10000;
             killThisGuy(attacker);
         }
     }
@@ -383,11 +378,9 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
 
     public boolean canTargetEntity(@Nullable Entity entity) {
         if (entity instanceof LivingEntity livingentity) {
-            if (this.level() == entity.level() && EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(entity) &&
+            return this.level() == entity.level() && EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(entity) &&
                     !this.isAlliedTo(entity) && entity.getType().is(BuniTags.EntityTypes.BUNI_ATTACK) &&
-                    !livingentity.isInvulnerable() && !livingentity.isDeadOrDying() && this.level().getWorldBorder().isWithinBounds(livingentity.getBoundingBox())) {
-                return true;
-            }
+                    !livingentity.isInvulnerable() && !livingentity.isDeadOrDying() && this.level().getWorldBorder().isWithinBounds(livingentity.getBoundingBox());
         }
 
         return false;
@@ -423,7 +416,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
             entityData.set(GUZZLING, !getInventory().isEmpty());
             playSound(BuniSounds.GUZZLE.get(), 0.8f, varyPitch(1, 0.15f));
 
-            CraftingContainer craftingcontainer = new TransientCraftingContainer(new AbstractContainerMenu((MenuType) null, -1) {
+            CraftingContainer craftingcontainer = new TransientCraftingContainer(new AbstractContainerMenu(null, -1) {
                 public ItemStack quickMoveStack(Player p_218264_, int p_218265_) {
                     return ItemStack.EMPTY;
                 }
@@ -447,7 +440,6 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
                 }
             }
         }
-        ;
     }
 
     @Override

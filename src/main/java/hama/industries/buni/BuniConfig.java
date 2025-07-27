@@ -19,6 +19,7 @@ public class BuniConfig {
     public final ForgeConfigSpec.IntValue MAX_SPAWN_RADIUS;
     public final ForgeConfigSpec.IntValue MIN_SPAWN_RADIUS;
     public final ForgeConfigSpec.IntValue NATURAL_SPAWN_CAP;
+    public final ForgeConfigSpec.DoubleValue PICK_ON_CHANCE;
 
     public BuniConfig(ForgeConfigSpec.Builder builder) {
         builder.push("general");
@@ -27,6 +28,7 @@ public class BuniConfig {
         MIN_SPAWN_RADIUS = builder.defineInRange("min_spawn_radius",20,1,128);
         MAX_SPAWN_RADIUS = builder.defineInRange("max_spawn_radius",40,1,128);
         NATURAL_SPAWN_CAP = builder.defineInRange("natural_spawn_cap",50,1,1000);
+        PICK_ON_CHANCE = builder.defineInRange("pick_on",1/64d,0,1);
         builder.pop();
     }
 

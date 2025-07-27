@@ -138,7 +138,8 @@ public class BuniAi {
         brain.addActivityAndRemoveMemoryWhenStopped(Activity.FIGHT, 0, ImmutableList.of(
                 StopAttackingIfTargetInvalid.create(),
                 SetWalkTargetFromAttackTargetIfTargetOutOfReach.create(e -> 1f),
-                MeleeAttack.create(20)
+                MeleeAttack.create(20),
+                stopAttackingAfterFirstHit()
             ), MemoryModuleType.ATTACK_TARGET);
     }
 

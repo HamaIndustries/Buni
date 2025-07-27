@@ -2,6 +2,7 @@ package hama.industries.buni.ai;
 
 import hama.industries.buni.Buni;
 import hama.industries.buni.BuniActivity;
+import hama.industries.buni.BuniConfig;
 import hama.industries.buni.BuniSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -27,11 +28,11 @@ public class BuniTargetingSensor extends Sensor<Buni> {
 
         brain.setMemory(MemoryModuleType.NEAREST_REPELLENT, findNearestRepellent(level, buni));
 
-        if (!hadRepellent && brain.getMemory(MemoryModuleType.NEAREST_REPELLENT).isPresent()) {
+        if (!hadRepellent && buni.isRepelled()) {
             buni.playSound(BuniSounds.REPELLED.get());
         }
 
-        if (!buni.isRepelled() && buni.getRandom().nextDouble() < 1/64d &&
+        if (!buni.isRepelled() && buni.getRandom().nextDouble() < BuniConfig.CONFIG.PICK_ON_CHANCE.get() &&
                 brain.getActiveNonCoreActivity().filter(act -> act == BuniActivity.DANCE).isEmpty()
                 && brain.getMemory(MemoryModuleType.ATTACK_TARGET).isEmpty()
         ) {
