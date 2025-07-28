@@ -37,9 +37,9 @@
   "entity.buni.repelled": {
     "category": "entity",
     "sounds": [
-      "buni:entity/buni/death1",
-      "buni:entity/buni/death2",
-      "buni:entity/buni/death3"
+      "buni:entity/buni/wah1",
+      "buni:entity/buni/wah2",
+      "buni:entity/buni/wah3"
     ]
   }
 }
