@@ -17,6 +17,7 @@ public class BuniSounds {
 
     public static final RegistryObject<SoundEvent> ATTACK = register("attack");
     public static final RegistryObject<SoundEvent> DEATH = register("death");
+    public static final RegistryObject<SoundEvent> REPELLED = register("repelled");
     public static final RegistryObject<SoundEvent> GUZZLE = register("guzzle");
     public static final RegistryObject<SoundEvent> HIT = register("hit");
     public static final RegistryObject<SoundEvent> IDLE = register("idle");

@@ -20,13 +20,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
-import net.minecraft.world.entity.PathfinderMob;
-import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -50,11 +44,6 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.Tags;
-import net.minecraftforge.event.entity.EntityMobGriefingEvent;
-import net.minecraftforge.event.entity.living.LivingDamageEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -69,15 +58,15 @@ import java.util.UUID;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-@Mod.EventBusSubscriber
 public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
 
     public static final EntityDataAccessor<OptionalInt> ACTIVITY = SynchedEntityData.defineId(Buni.class, EntityDataSerializers.OPTIONAL_UNSIGNED_INT);
     public static final EntityDataAccessor<Boolean> GUZZLING = SynchedEntityData.defineId(Buni.class, EntityDataSerializers.BOOLEAN);
-    public static final EntityDataAccessor<Integer> VARIANT_ID = SynchedEntityData.defineId(Buni.class,  EntityDataSerializers.INT);
+    public static final EntityDataAccessor<Integer> VARIANT_ID = SynchedEntityData.defineId(Buni.class, EntityDataSerializers.INT);
 
     public static AttributeSupplier.Builder createAttributes() {
-        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 3.0).add(Attributes.MOVEMENT_SPEED, 0.3d).add(Attributes.ATTACK_DAMAGE, 2);    }
+        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 3.0).add(Attributes.MOVEMENT_SPEED, 0.3d).add(Attributes.ATTACK_DAMAGE, 2);
+    }
 
     public record Variant(String id, @Nullable DyeColor color, boolean emissive) {
         private static final List<Variant> types = new ObjectArrayList<>();
@@ -102,7 +91,9 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         public static final Variant NETHER = new Variant("nether", null, true);
 
         public Variant(String id, DyeColor color, boolean emissive) {
-            this.id = id; this.color = color; this.emissive = emissive;
+            this.id = id;
+            this.color = color;
+            this.emissive = emissive;
             types.add(this);
         }
 
@@ -119,16 +110,18 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         }
 
         public static int getID(Variant v) {
-            return Objects.requireNonNull(types.indexOf(v));
+            return types.indexOf(v);
         }
 
-        @Nullable  public static Variant get(DyeColor color) {
+        @Nullable
+        public static Variant get(DyeColor color) {
             for (var v : types) if (v.color != null && v.color.equals(color)) return v;
             return null;
         }
     }
 
-    public record BuniGroupData(Variant variant) implements SpawnGroupData {}
+    public record BuniGroupData(Variant variant) implements SpawnGroupData {
+    }
 
     protected static final int MIN_TICKS_TO_PLAY_SOUND = 10 * 20;
 
@@ -138,13 +131,14 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     protected int hatred;
     protected int ticksSinceLastSound;
     protected boolean evil;
-    @Nullable protected LivingEntity thrower;
+    @Nullable
+    protected LivingEntity thrower;
 
     protected Buni(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
         setCanPickUpLoot(canPickUpLoot());
         entityData.set(GUZZLING, !getInventory().isEmpty());
-        ticksSinceLastSound = (int)(getRandom().nextFloat() *  MIN_TICKS_TO_PLAY_SOUND);
+        ticksSinceLastSound = (int) (getRandom().nextFloat() * MIN_TICKS_TO_PLAY_SOUND);
     }
 
     @Override
@@ -174,7 +168,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     @Override
     public InteractionResult interactAt(Player player, Vec3 hitPos, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (stack.getItem() instanceof DyeItem dye ) {
+        if (stack.getItem() instanceof DyeItem dye) {
             if (level().isClientSide) return InteractionResult.SUCCESS;
             entityData.set(VARIANT_ID, Variant.getID(Objects.requireNonNull(Variant.get(dye.getDyeColor()))));
             return InteractionResult.CONSUME;
@@ -220,7 +214,9 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         return BuiltInRegistries.ACTIVITY.getHolder(entityData.get(ACTIVITY).orElse(-1)).map(Holder::get).orElse(Activity.IDLE);
     }
 
-    public boolean isEvil() { return evil; }
+    public boolean isEvil() {
+        return evil;
+    }
 
     @Override
     public void aiStep() {
@@ -243,7 +239,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         this.entityData.set(ACTIVITY,
                 getBrain().getActiveNonCoreActivity().map(act -> OptionalInt.of(BuiltInRegistries.ACTIVITY.getId(act))).orElse(OptionalInt.empty())
         );
-        hatred = Math.max(0, hatred-1);
+        hatred = Math.max(0, hatred - 1);
         tumblingTicks++;
     }
 
@@ -286,7 +282,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
             }
         }
 
-        if (source.getDirectEntity() instanceof LivingEntity living) {
+        if (source.getEntity() instanceof LivingEntity living) {
             this.annoyedBy(living);
         }
         return false;
@@ -313,19 +309,19 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     }
 
     @Override
-    public void knockback(double p_147241_, double x, double z) {
+    public void knockback(double pStrength, double x, double z) {
         if (!level().isClientSide) {
             tumblingTicks = 0;
             getBrain().setMemory(BuniAi.TUMBLING, true);
             getBrain().setActiveActivityIfPossible(BuniActivity.TUMBLE);
         }
-        super.knockback(p_147241_, x, z);
-        this.setYRot((float)Mth.atan2(z, x));
+        super.knockback(pStrength, x, z);
+        this.setYRot((float) Mth.atan2(z, x));
     }
 
-    private static final Variant[] COMMON_BUNS = { Variant.WHITE, Variant.GRAY, Variant.BROWN };
-    private static final Variant[] UNCOMMON_BUNS = { Variant.PINK, Variant.RED, Variant.ORANGE, Variant.BLACK };
-    private static final Variant[] RARE_BUNS = { Variant.PURPLE, Variant.DIAMOND, Variant.LIME, Variant.BLUE };
+    private static final Variant[] COMMON_BUNS = {Variant.WHITE, Variant.GRAY, Variant.BROWN};
+    private static final Variant[] UNCOMMON_BUNS = {Variant.PINK, Variant.RED, Variant.ORANGE, Variant.BLACK};
+    private static final Variant[] RARE_BUNS = {Variant.PURPLE, Variant.DIAMOND, Variant.LIME, Variant.BLUE};
 
     @Override
     public void swing(InteractionHand p_21007_) {
@@ -333,9 +329,11 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     }
 
     @Override
-    public boolean doHurtTarget(Entity p_21372_) {
-        boolean result = super.doHurtTarget(p_21372_);
-        if (result && !level().isClientSide) this.playSound(BuniSounds.ATTACK.get());
+    public boolean doHurtTarget(Entity entity) {
+        boolean result = super.doHurtTarget(entity);
+        if (result && !level().isClientSide) {
+            this.playSound(BuniSounds.ATTACK.get());
+        }
         return result;
     }
 
@@ -364,7 +362,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         if (!(groupData instanceof BuniGroupData)) {
             groupData = spawnType == MobSpawnType.NATURAL ? makeNaturalGroupData(levelAccessor) : new BuniGroupData(Variant.WHITE);
         }
-        this.setVariant(((BuniGroupData)groupData).variant);
+        this.setVariant(((BuniGroupData) groupData).variant);
         return super.finalizeSpawn(levelAccessor, difficulty, spawnType, groupData, p_21438_);
     }
 
@@ -372,15 +370,30 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         if (level().isClientSide) return;
         hatred += 1000;
         if (hatred > 10000) {
-            hatred = 0;
+            hatred = 10000;
             killThisGuy(attacker);
         }
     }
 
-    private void killThisGuy(LivingEntity target) {
+
+    public boolean canTargetEntity(@Nullable Entity entity) {
+        if (entity instanceof LivingEntity livingentity) {
+            return this.level() == entity.level() && EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(entity) &&
+                    !this.isAlliedTo(entity) && entity.getType().is(BuniTags.EntityTypes.BUNI_ATTACK) &&
+                    !livingentity.isInvulnerable() && !livingentity.isDeadOrDying() && this.level().getWorldBorder().isWithinBounds(livingentity.getBoundingBox());
+        }
+
+        return false;
+    }
+
+    public boolean isRepelled() {
+        return brain.getMemory(MemoryModuleType.NEAREST_REPELLENT).isPresent();
+    }
+
+    void killThisGuy(LivingEntity target) {
         getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
         getBrain().getMemory(MemoryModuleType.NEAREST_LIVING_ENTITIES).ifPresent(
-                entities -> entities.stream().forEach(e -> {
+                entities -> entities.forEach(e -> {
                     if (e instanceof Buni) {
                         e.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
                     }
@@ -403,10 +416,11 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
             entityData.set(GUZZLING, !getInventory().isEmpty());
             playSound(BuniSounds.GUZZLE.get(), 0.8f, varyPitch(1, 0.15f));
 
-            CraftingContainer craftingcontainer = new TransientCraftingContainer(new AbstractContainerMenu((MenuType)null, -1) {
+            CraftingContainer craftingcontainer = new TransientCraftingContainer(new AbstractContainerMenu(null, -1) {
                 public ItemStack quickMoveStack(Player p_218264_, int p_218265_) {
                     return ItemStack.EMPTY;
                 }
+
                 public boolean stillValid(Player p_29888_) {
                     return false;
                 }
@@ -425,7 +439,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
                     spawnAtLocation(result.copyWithCount(amount - stack.getMaxStackSize()));
                 }
             }
-        };
+        }
     }
 
     @Override
@@ -464,24 +478,6 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         return (random.nextFloat() - 0.5f) * variance + pitch;
     }
 
-    @SubscribeEvent
-    public static void protecc(LivingDamageEvent event) {
-        if (event.getEntity() instanceof Player player) {
-            if (player.level().isClientSide) return;
-            if (event.getSource().getDirectEntity() instanceof LivingEntity attacker && !(attacker instanceof Buni)){
-                player.level().getEntitiesOfClass(Buni.class, player.getBoundingBox().inflate(20)).stream()
-                        .findAny()
-                        .ifPresent(b -> b.killThisGuy(attacker));
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void overrideMobGriefing(EntityMobGriefingEvent event) {
-        if (event.getEntity().getType().equals(BuniRegistry.BUNI.get())) {
-            event.setResult(Event.Result.ALLOW);
-        }
-    }
 
     @Override
     public double getMyRidingOffset() {

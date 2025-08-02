@@ -4,62 +4,63 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.SpawnPlacements;
+import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 public class BuniSpawner {
     /*
     Forge spawn system is garbage with zero documentation, so we're going to cheat
      */
 
-    // once every 2 minutes
-    public static final double BASE_SPAWN_CHANCE_PER_TICK = 1d/800;
-    public static final int MAX_SPAWN_RADIUS = 40;
-    public static final int MIN_SPAWN_RADIUS = 20;
-    public static final int SPAWN_WIDTH = MAX_SPAWN_RADIUS - MIN_SPAWN_RADIUS;
-    private static final int NATURAL_SPAWN_CAP = 100;
+    public static final boolean DEV = !FMLEnvironment.production;
 
-    public static void tickSpawnBunis(TickEvent.ServerTickEvent event) {
-        MinecraftServer server = event.getServer();
-        if (!server.getGameRules().getRule(BuniGameRules.RULE_NATURAL_BUNI_SPAWNS).get()) return;
+    public static void tickSpawnBunis(TickEvent.PlayerTickEvent event) {
+        if (event.side == LogicalSide.CLIENT || event.phase == TickEvent.Phase.START ||
+                !event.player.getServer().getGameRules().getRule(BuniGameRules.RULE_NATURAL_BUNI_SPAWNS).get()) return;
+        ServerPlayer player = (ServerPlayer) event.player;
+        ServerLevel level = player.serverLevel();
 
-        server.getPlayerList().getPlayers().stream().filter(LivingEntity::isAlive).forEach(player -> {
-            ServerLevel level = (ServerLevel) player.level();
+        double originDistance = level.getSharedSpawnPos().getCenter().distanceTo(player.position());
+        // reduce chance linearly with distance
+        double spawnChance = BuniConfig.CONFIG.SPAWN_CHANCE.get() / Math.max(1d, (originDistance - 1000) / 100);
+        if (player.getRandom().nextDouble() > spawnChance) return;
 
-            double originDistance = level.getSharedSpawnPos().getCenter().distanceTo(player.position());
-            // reduce chance linearly with distance
-            double spawnChance = BASE_SPAWN_CHANCE_PER_TICK / Math.max(1d, (originDistance - 1000) / 100);
-            if (player.getRandom().nextDouble() > spawnChance) return;
+        int spawnCount = level.getEntitiesOfClass(Buni.class, player.getBoundingBox().inflate(BuniConfig.CONFIG.MAX_SPAWN_RADIUS.get())).size();
+        if (spawnCount > BuniConfig.CONFIG.NATURAL_SPAWN_CAP.get()) return;
 
-            int spawnCount = level.getEntitiesOfClass(Buni.class, player.getBoundingBox().inflate(MAX_SPAWN_RADIUS)).size();
-            if (spawnCount > NATURAL_SPAWN_CAP) return;
+        float th = (float) (level.random.nextFloat() * 2 * Math.PI);
+        int spawnWidth = BuniConfig.CONFIG.MAX_SPAWN_RADIUS.get() - BuniConfig.CONFIG.MIN_SPAWN_RADIUS.get();
+        int x = (int) (Mth.cos(th) * spawnWidth);
+        int z = (int) (Mth.sin(th) * spawnWidth);
+        x = player.getBlockX() + BuniConfig.CONFIG.MIN_SPAWN_RADIUS.get() + x;
+        z = player.getBlockZ() + BuniConfig.CONFIG.MIN_SPAWN_RADIUS.get() + z;
 
-            float th = level.random.nextFloat() * 2 * 3.1415f;
-            int x = (int)(Mth.cos(th) * SPAWN_WIDTH);
-            int z = (int)(Mth.sin(th) * SPAWN_WIDTH);
-            x = player.getBlockX() + Mth.sign(x) * MIN_SPAWN_RADIUS + x;
-            z = player.getBlockZ() + Mth.sign(z) * MIN_SPAWN_RADIUS + z;
+        BlockPos spawnPos = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z));
+        if (NaturalSpawner.isSpawnPositionOk(SpawnPlacements.Type.ON_GROUND, level, spawnPos, BuniRegistry.BUNI.get())) {
+            int bunCount = player.getRandom().nextIntBetweenInclusive(1, 2);
 
-            BlockPos spawnPos = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z));
-            if (level.getBlockState(spawnPos.below()).isFaceSturdy(level, spawnPos.below(), Direction.UP)) {
-                int bunCount = player.getRandom().nextIntBetweenInclusive(3, 5);
-                Buni.BuniGroupData groupData = Buni.makeNaturalGroupData(level);
-
-                for (int i = 0; i < bunCount; i++) {
-                    Buni bun = BuniRegistry.BUNI.get().create(level);
-                    ForgeEventFactory.onFinalizeSpawn(bun, level, level.getCurrentDifficultyAt(spawnPos), MobSpawnType.NATURAL, groupData, null);
-                    bun.setPos(spawnPos.above().getCenter());
-                    level.addFreshEntity(bun);
-                }
-//                BuniMod.LOGGER.info("spawned buni at " + spawnPos);
-            } else {
-//                BuniMod.LOGGER.info("failed to spawn buni at " + spawnPos);
+            for (int i = 0; i < bunCount; i++) {
+                Buni bun = BuniRegistry.BUNI.get().spawn(level, spawnPos, MobSpawnType.NATURAL);
             }
-//            BuniMod.LOGGER.info("total: "  + spawnCount);
-        });
+            logIfDev("spawned buni at {}", spawnPos);
+        } else {
+            logIfDev("failed to spawn buni at {}", spawnPos);
+        }
+        logIfDev("total: {}", spawnCount);
+    }
+
+    public static void logIfDev(String s, Object... args) {
+        if (DEV) {
+            BuniMod.LOGGER.info(s, args);
+        }
     }
 }

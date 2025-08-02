@@ -1,11 +1,16 @@
 package hama.industries.buni;
 
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.data.DataGenerator;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
+import net.minecraft.data.tags.EntityTypeTagsProvider;
 import net.minecraft.data.tags.ItemTagsProvider;
 import net.minecraft.data.tags.TagsProvider;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
@@ -14,11 +19,15 @@ import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.data.event.GatherDataEvent;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class BuniDatagen {
 
     public static void generateData(GatherDataEvent event) {
+        DataGenerator generator = event.getGenerator();
+        PackOutput packOutput = generator.getPackOutput();
         event.getGenerator().addProvider(
                 event.includeServer(),
                 (DataProvider.Factory<BuniItemTagsProvider>) (PackOutput output) -> new BuniItemTagsProvider(
@@ -28,6 +37,15 @@ public class BuniDatagen {
                         BuniMod.MODID,
                         event.getExistingFileHelper()
         ));
+
+        event.getGenerator().addProvider(
+                event.includeServer(),
+               new BuniEntityTypeTagsProvider(
+                        packOutput,
+                        event.getLookupProvider(),
+                        BuniMod.MODID,
+                        event.getExistingFileHelper()
+                ));
 
         event.getGenerator().addProvider(
                 event.includeClient(),
@@ -41,6 +59,7 @@ public class BuniDatagen {
             super(p_275204_, p_275194_, p_275634_, modId, existingFileHelper);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         protected void addTags(HolderLookup.Provider lookupProvider) {
             this.tag(BuniTags.Items.BUNI_TEMPTATIONS)
@@ -52,6 +71,21 @@ public class BuniDatagen {
                             Items.TALL_GRASS,
                             Items.SEAGRASS
                     );
+        }
+    }
+
+    public static class BuniEntityTypeTagsProvider extends EntityTypeTagsProvider {
+
+        public BuniEntityTypeTagsProvider(PackOutput p_275204_, CompletableFuture<HolderLookup.Provider> p_275194_,  String modId, @Nullable ExistingFileHelper existingFileHelper) {
+            super(p_275204_, p_275194_, modId, existingFileHelper);
+        }
+
+        @Override
+        protected void addTags(HolderLookup.Provider lookupProvider) {
+            List<EntityType<?>> hostiles = BuiltInRegistries.ENTITY_TYPE.stream().filter(type -> type.getCategory() == MobCategory.MONSTER).collect(Collectors.toList());
+            hostiles.add(EntityType.PLAYER);
+            hostiles.add(BuniRegistry.BUNI.get());
+            tag(BuniTags.EntityTypes.BUNI_ATTACK).add(hostiles.toArray(EntityType[]::new));
         }
     }
 
