@@ -370,7 +370,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         if (level().isClientSide) return;
         hatred += 1000;
         if (hatred > 10000) {
-            hatred = 10000;
+            hatred = 0;
             killThisGuy(attacker);
         }
     }
@@ -484,3 +484,4 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         return super.getMyRidingOffset() + 0.15;
     }
 }
+
