@@ -32,7 +32,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
-import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.DyeItem;
@@ -133,6 +132,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     protected boolean evil;
     @Nullable
     protected LivingEntity thrower;
+    protected boolean noPickup;
 
     protected Buni(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
@@ -172,7 +172,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
             if (level().isClientSide) return InteractionResult.SUCCESS;
             entityData.set(VARIANT_ID, Variant.getID(Objects.requireNonNull(Variant.get(dye.getDyeColor()))));
             return InteractionResult.CONSUME;
-        } else if (stack.isEmpty()) {
+        } else if (stack.isEmpty()  && !isNoPickup()) {
             if (level().isClientSide) return InteractionResult.SUCCESS;
             player.setItemInHand(hand, BuniItem.of(this));
             this.discard();
@@ -286,6 +286,14 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
             this.annoyedBy(living);
         }
         return false;
+    }
+
+    public boolean isNoPickup() {
+        return noPickup;
+    }
+
+    public void setNoPickup(boolean noPickup) {
+        this.noPickup = noPickup;
     }
 
     @Override
@@ -463,6 +471,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         writeInventoryToTag(tag);
         tag.putInt("buni_variant", variant().index());
         tag.putBoolean("evil", evil);
+        tag.putBoolean("no_pickup",noPickup);
     }
 
     @Override
@@ -472,6 +481,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         entityData.set(GUZZLING, !getInventory().isEmpty());
         setVariant(Variant.get(tag.getInt("buni_variant")));
         evil = tag.getBoolean("evil");
+        noPickup = tag.getBoolean("no_pickup");
     }
 
     private float varyPitch(float pitch, float variance) {
