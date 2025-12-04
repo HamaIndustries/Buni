@@ -1,27 +1,27 @@
 package hama.industries.buni;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class BuniConfig {
 
     public static final BuniConfig CONFIG;
-    public static final ForgeConfigSpec SERVER_SPEC;
+    public static final ModConfigSpec SERVER_SPEC;
 
     static {
-        final Pair<BuniConfig, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(BuniConfig::new);
+        final Pair<BuniConfig, ModConfigSpec> specPair = new ModConfigSpec.Builder().configure(BuniConfig::new);
         SERVER_SPEC = specPair.getRight();
         CONFIG = specPair.getLeft();
     }
 
-    public final ForgeConfigSpec.DoubleValue SPAWN_CHANCE;
+    public final ModConfigSpec.DoubleValue SPAWN_CHANCE;
 
-    public final ForgeConfigSpec.IntValue MAX_SPAWN_RADIUS;
-    public final ForgeConfigSpec.IntValue MIN_SPAWN_RADIUS;
-    public final ForgeConfigSpec.IntValue NATURAL_SPAWN_CAP;
-    public final ForgeConfigSpec.DoubleValue PICK_ON_CHANCE;
+    public final ModConfigSpec.IntValue MAX_SPAWN_RADIUS;
+    public final ModConfigSpec.IntValue MIN_SPAWN_RADIUS;
+    public final ModConfigSpec.IntValue NATURAL_SPAWN_CAP;
+    public final ModConfigSpec.DoubleValue PICK_ON_CHANCE;
 
-    public BuniConfig(ForgeConfigSpec.Builder builder) {
+    public BuniConfig(ModConfigSpec.Builder builder) {
         builder.push("general");
         // once every 2 minutes
         SPAWN_CHANCE = builder.defineInRange("spawn_chance",1/1024d,0,1);

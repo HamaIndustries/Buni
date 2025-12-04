@@ -1,11 +1,11 @@
 package hama.industries.buni;
 
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.constant.DefaultAnimations;
-import software.bernie.geckolib.core.animation.AnimatableManager;
-import software.bernie.geckolib.core.animation.AnimationController;
-import software.bernie.geckolib.core.animation.RawAnimation;
-import software.bernie.geckolib.core.object.DataTicket;
-import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.constant.dataticket.DataTicket;
 
 public class BuniAnimations {
     public static final RawAnimation GUZZLE = RawAnimation.begin().thenPlay("animation.buni.guzzled");

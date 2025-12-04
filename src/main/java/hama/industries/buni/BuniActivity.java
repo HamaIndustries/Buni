@@ -1,9 +1,9 @@
 package hama.industries.buni;
 
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.schedule.Activity;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegisterEvent;
-import software.bernie.geckolib.core.animation.RawAnimation;
+import net.neoforged.neoforge.registries.RegisterEvent;
+import software.bernie.geckolib.animation.RawAnimation;
 
 public class BuniActivity extends Activity {
     public static BuniActivity DANCE = new BuniActivity("dance", BuniAnimations.DANCE);
@@ -13,7 +13,7 @@ public class BuniActivity extends Activity {
 
     public static void registerActivities(RegisterEvent event) {
         event.register(
-                ForgeRegistries.ACTIVITIES.getRegistryKey(),
+                Registries.ACTIVITY,
                 registry -> {
                     registry.register(BuniMod.id(DANCE.getName()), DANCE);
                     registry.register(BuniMod.id(TUMBLE.getName()), TUMBLE);

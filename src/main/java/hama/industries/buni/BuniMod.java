@@ -1,12 +1,11 @@
 package hama.industries.buni;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.common.NeoForge;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,16 +15,15 @@ public class BuniMod {
   public static final String MODID = "buni";
   public static final Logger LOGGER = LogManager.getLogger();
 
-  public BuniMod() {
-    ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER,BuniConfig.SERVER_SPEC);
-    IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
+  public BuniMod(IEventBus eventBus,ModContainer modContainer) {
+    modContainer.registerConfig(ModConfig.Type.SERVER,BuniConfig.SERVER_SPEC);
     eventBus.addListener(BuniRegistry::registerAttributes);
     eventBus.addListener(BuniActivity::registerActivities);
     eventBus.addListener(BuniAi::registerSensorsAndMemories);
     eventBus.addListener(BuniDatagen::generateData);
     BuniRegistry.init(eventBus);
     BuniSounds.init(eventBus);
-    MinecraftForge.EVENT_BUS.addListener(BuniSpawner::tickSpawnBunis);
+    NeoForge.EVENT_BUS.addListener(BuniSpawner::tickSpawnBunis);
     BuniGameRules.init();
     BuniEvents.init();
   }
@@ -34,6 +32,6 @@ public class BuniMod {
 //  private void commonSetup(final FMLCommonSetupEvent event) {}
 
   public static ResourceLocation id(String path) {
-    return new ResourceLocation(MODID, path);
+    return ResourceLocation.fromNamespaceAndPath(MODID, path);
   }
 }

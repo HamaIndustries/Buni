@@ -4,6 +4,7 @@ import com.mojang.serialization.Dynamic;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -26,6 +27,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.decoration.Painting;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Player;
@@ -36,16 +38,20 @@ import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.Tags;
+import net.neoforged.neoforge.common.Tags;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import javax.annotation.Nullable;
@@ -142,11 +148,11 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        entityData.define(ACTIVITY, OptionalInt.of(BuiltInRegistries.ACTIVITY.getId(Activity.IDLE)));
-        entityData.define(GUZZLING, false);
-        entityData.define(VARIANT_ID, Variant.getID(Variant.WHITE));
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(ACTIVITY, OptionalInt.of(BuiltInRegistries.ACTIVITY.getId(Activity.IDLE)));
+        builder.define(GUZZLING, false);
+        builder.define(VARIANT_ID, Variant.getID(Variant.WHITE));
     }
 
     @Override
@@ -211,7 +217,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     }
 
     public Activity activity() {
-        return BuiltInRegistries.ACTIVITY.getHolder(entityData.get(ACTIVITY).orElse(-1)).map(Holder::get).orElse(Activity.IDLE);
+        return BuiltInRegistries.ACTIVITY.getHolder(entityData.get(ACTIVITY).orElse(-1)).map(Holder::value).orElse(Activity.IDLE);
     }
 
     public boolean isEvil() {
@@ -251,8 +257,8 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         }
         if (source.getDirectEntity() instanceof LivingEntity attacker && attacker.getMainHandItem().is(ItemTags.AXES)) {
             if (level() instanceof ServerLevel serverLevel) {
-                BuniRegistry.BUNI.get().spawn(serverLevel, null, clone -> {
-                    clone.deserializeNBT(serializeNBT());
+                BuniRegistry.BUNI.get().spawn(serverLevel,  clone -> {
+                    clone.load(saveWithoutId(new CompoundTag()));
                     clone.setUUID(UUID.randomUUID());
                     ItemStack stack = getInventory().getItem(0);
                     int amt = stack.getCount();
@@ -366,12 +372,12 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     }
 
     @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor levelAccessor, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData groupData, @Nullable CompoundTag p_21438_) {
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor levelAccessor, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData groupData) {
         if (!(groupData instanceof BuniGroupData)) {
             groupData = spawnType == MobSpawnType.NATURAL ? makeNaturalGroupData(levelAccessor) : new BuniGroupData(Variant.WHITE);
         }
         this.setVariant(((BuniGroupData) groupData).variant);
-        return super.finalizeSpawn(levelAccessor, difficulty, spawnType, groupData, p_21438_);
+        return super.finalizeSpawn(levelAccessor, difficulty, spawnType, groupData);
     }
 
     protected void annoyedBy(LivingEntity attacker) {
@@ -436,8 +442,9 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
 
             ItemStack stack = item.getItem();
             craftingcontainer.setItem(0, stack);
-            ItemStack result = this.level().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingcontainer, this.level()).map(
-                    recipe -> recipe.assemble(craftingcontainer, this.level().registryAccess())
+            CraftingInput craftingInput = craftingcontainer.asCraftInput();
+            ItemStack result = this.level().getRecipeManager().getRecipeFor(RecipeType.CRAFTING,craftingInput, this.level()).map(
+                    recipe -> recipe.value().assemble(craftingInput, this.level().registryAccess())
             ).orElse(null);
 
             if (result != null && result.is(Tags.Items.DYES)) {
@@ -468,7 +475,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
-        writeInventoryToTag(tag);
+        writeInventoryToTag(tag,registryAccess());
         tag.putInt("buni_variant", variant().index());
         tag.putBoolean("evil", evil);
         tag.putBoolean("no_pickup",noPickup);
@@ -477,11 +484,24 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        readInventoryFromTag(tag);
+        readInventoryFromTag(tag,registryAccess());
         entityData.set(GUZZLING, !getInventory().isEmpty());
         setVariant(Variant.get(tag.getInt("buni_variant")));
         evil = tag.getBoolean("evil");
         noPickup = tag.getBoolean("no_pickup");
+    }
+
+    public CustomData createCustomData() {
+        CustomData customdata = CustomData.EMPTY
+                .update(tag -> {
+                    CompoundTag ret = new CompoundTag();
+                    String id = self().getEncodeId();
+                    if (id != null) {
+                        ret.putString("id", id);
+                    }
+                    saveWithoutId(ret);
+                });
+        return customdata;
     }
 
     private float varyPitch(float pitch, float variance) {
@@ -489,9 +509,9 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
     }
 
 
-    @Override
+   /* @Override
     public double getMyRidingOffset() {
         return super.getMyRidingOffset() + 0.15;
-    }
+    }*/
 }
 
