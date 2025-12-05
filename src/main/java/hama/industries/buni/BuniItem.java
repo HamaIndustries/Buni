@@ -33,17 +33,17 @@ public class BuniItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (!level.isClientSide) {
-            CustomData tag = stack.get(DataComponents.CUSTOM_DATA);
+            CustomData tag = stack.get(DataComponents.ENTITY_DATA);
             BuniRegistry.BUNI.get().spawn((ServerLevel) level, e -> {
-                if (tag != null && tag.isEmpty()) {
+                if (stack.has(DataComponents.CUSTOM_NAME)) {
+                    e.setCustomName(stack.getHoverName());
+                }
+                if (tag != null && !tag.isEmpty()) {
                     e.load(tag.copyTag());
                     Vec3 look = player.getLookAngle();
                     e.setPos(player.getEyePosition().add(look));
                     e.knockback(2, -look.x, -look.z);
                     e.thrower = player;
-                    if (stack.has(DataComponents.CUSTOM_NAME)) {
-                        e.setCustomName(stack.getHoverName());
-                    }
                 }
             }, player.getOnPos(), MobSpawnType.BUCKET, true, false);
         }
