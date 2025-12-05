@@ -1,11 +1,11 @@
 {
   "values": [
     "#minecraft:flowers",
-    "#forge:crops/carrot",
-    "#forge:crops/beetroot",
+    "#c:crops/carrot",
+    "#c:crops/beetroot",
     "minecraft:fern",
     "minecraft:large_fern",
-    "minecraft:grass",
+    "minecraft:short_grass",
     "minecraft:tall_grass",
     "minecraft:seagrass"
   ]

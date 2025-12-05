@@ -1,5 +1,3 @@
-import org.slf4j.event.Level
-
 plugins {
     id 'java-library'
     id 'maven-publish'
@@ -110,7 +108,7 @@ neoForge {
             // Recommended logging level for the console
             // You can set various levels here.
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
-            logLevel = Level.DEBUG
+            logLevel = org.slf4j.event.Level.DEBUG
         }
     }
 
