@@ -181,6 +181,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
         } else if (stack.isEmpty()  && !isNoPickup()) {
             if (level().isClientSide) return InteractionResult.SUCCESS;
             player.setItemInHand(hand, BuniItem.of(this));
+            player.getCooldowns().addCooldown(BuniRegistry.BUNI_ITEM.get(),5);
             this.discard();
             return InteractionResult.SUCCESS;
         }
@@ -493,14 +494,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
 
     public CustomData createCustomData() {
         CustomData customdata = CustomData.EMPTY
-                .update(tag -> {
-                    CompoundTag ret = new CompoundTag();
-                    String id = self().getEncodeId();
-                    if (id != null) {
-                        ret.putString("id", id);
-                    }
-                    saveWithoutId(ret);
-                });
+                .update(this::saveAsPassenger);
         return customdata;
     }
 

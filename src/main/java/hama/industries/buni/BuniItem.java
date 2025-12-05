@@ -21,7 +21,8 @@ public class BuniItem extends Item {
 
     public static ItemStack of(Buni buni) {
         ItemStack stack = BuniRegistry.BUNI_ITEM.get().getDefaultInstance();
-        stack.set(DataComponents.ENTITY_DATA, buni.createCustomData());//stored_buni, does this need a data component?
+        CustomData customData = buni.createCustomData();
+        stack.set(DataComponents.ENTITY_DATA, customData);//stored_buni, does this need a data component?
         if (buni.hasCustomName()) {
             stack.set(DataComponents.CUSTOM_NAME,buni.getCustomName());
         }
