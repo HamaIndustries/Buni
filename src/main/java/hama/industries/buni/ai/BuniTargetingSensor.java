@@ -23,18 +23,20 @@ public class BuniTargetingSensor extends Sensor<Buni> {
     @Override
     protected void doTick(ServerLevel level, Buni buni) {
         Brain<Buni> brain = buni.getBrain();
+        boolean evil = buni.isEvil();
 
-        boolean hadRepellent = brain.getMemory(MemoryModuleType.NEAREST_REPELLENT).isPresent();
+        if (!evil) {
+            boolean hadRepellent = brain.getMemory(MemoryModuleType.NEAREST_REPELLENT).isPresent();
 
-        brain.setMemory(MemoryModuleType.NEAREST_REPELLENT, findNearestRepellent(level, buni));
+            brain.setMemory(MemoryModuleType.NEAREST_REPELLENT, findNearestRepellent(level, buni));
 
-        if (!hadRepellent && buni.isRepelled()) {
-            buni.playSound(BuniSounds.REPELLED.get());
+            if (!hadRepellent && buni.isRepelled()) {
+                buni.playSound(BuniSounds.REPELLED.get());
+            }
         }
 
-        if (!buni.isRepelled() && buni.getRandom().nextDouble() < BuniConfig.CONFIG.PICK_ON_CHANCE.get() &&
-                brain.getActiveNonCoreActivity().filter(act -> act == BuniActivity.DANCE).isEmpty()
-                && brain.getMemory(MemoryModuleType.ATTACK_TARGET).isEmpty()
+        if (evil || (!buni.isRepelled() && buni.getRandom().nextDouble() < BuniConfig.CONFIG.PICK_ON_CHANCE.get() &&
+                brain.getActiveNonCoreActivity().filter(act -> act == BuniActivity.DANCE).isEmpty()) && brain.getMemory(MemoryModuleType.ATTACK_TARGET).isEmpty()
         ) {
             Optional<LivingEntity> target = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES)
                     .flatMap(nearest -> nearest.findClosest(buni::canTargetEntity));

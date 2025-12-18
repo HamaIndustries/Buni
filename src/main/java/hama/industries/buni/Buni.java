@@ -393,7 +393,7 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
 
     public boolean canTargetEntity(@Nullable Entity entity) {
         if (entity instanceof LivingEntity livingentity) {
-            return this.level() == entity.level() && EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(entity) &&
+            return (!isEvil() || livingentity instanceof Player) &&  this.level() == entity.level() && EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(entity) &&
                     !this.isAlliedTo(entity) && entity.getType().is(BuniTags.EntityTypes.BUNI_ATTACK) &&
                     !livingentity.isInvulnerable() && !livingentity.isDeadOrDying() && this.level().getWorldBorder().isWithinBounds(livingentity.getBoundingBox());
         }
