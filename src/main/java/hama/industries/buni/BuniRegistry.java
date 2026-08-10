@@ -3,8 +3,10 @@ package hama.industries.buni;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.Item;
+import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -30,6 +32,11 @@ public class BuniRegistry {
   public static void init(IEventBus bus) {
     ENTITIES.register(bus);
     ITEMS.register(bus);
+    bus.addListener(BuniRegistry::registerItemColors);
+  }
 
+  @SubscribeEvent
+  public static void registerItemColors(RegisterColorHandlersEvent.Item event){
+    event.register(new BuniItem.BuniItemColor(), BuniRegistry.BUNI_ITEM.get());
   }
 }
