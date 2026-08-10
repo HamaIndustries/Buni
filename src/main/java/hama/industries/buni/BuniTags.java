@@ -12,5 +12,6 @@ public class BuniTags {
 
     public static class  EntityTypes {
         public static final TagKey<EntityType<?>> BUNI_ATTACK = TagKey.create(Registries.ENTITY_TYPE,BuniMod.id("buni_attack"));
+        public static final TagKey<EntityType<?>> KILL_ON_SIGHT = TagKey.create(Registries.ENTITY_TYPE,BuniMod.id("kill_on_sight"));
     }
 }
