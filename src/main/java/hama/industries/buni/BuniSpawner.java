@@ -47,7 +47,7 @@ public class BuniSpawner {
             int bunCount;
             EntityType<? extends Buni> bunType;
             boolean evil = false;
-            if (level.random.nextFloat() < 0.001) {
+            if (level.random.nextFloat() < BuniConfig.CONFIG.BUNBARIAN_SPAWN_CHANCE.get()) {
                 bunCount = player.getRandom().nextIntBetweenInclusive(3, 4);
                 bunType =  BuniRegistry.BUNBARIAN.get();
                 evil = true;
