@@ -4,6 +4,8 @@ import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
+
+import hama.industries.buni.entity.Buni;
 import software.bernie.geckolib.constant.DefaultAnimations;
 import software.bernie.geckolib.constant.dataticket.DataTicket;
 

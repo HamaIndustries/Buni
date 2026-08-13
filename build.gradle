@@ -22,11 +22,6 @@ repositories {
     mavenCentral()
     flatDir { dir 'libs' }
     maven {
-        // location of the maven that hosts JEI files
-        name = "Progwml6 maven"
-        url = 'https://dvs1.progwml6.com/files/maven/'
-    }
-    maven {
         name = "curios"
         url = 'https://maven.theillusivec4.top/'
     }
@@ -37,8 +32,7 @@ repositories {
         name = 'GeckoLib'
         url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
         content {
-            includeGroupByRegex("software\\.bernie.*")
-            includeGroup("com.eliotlash.mclib")
+            includeGroup("software.bernie.geckolib")
         }
     }
 }

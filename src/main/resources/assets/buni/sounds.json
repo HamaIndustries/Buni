@@ -41,5 +41,11 @@
       "buni:entity/buni/wah2",
       "buni:entity/buni/wah3"
     ]
+  },
+  "entity.buni.mischief": {
+    "category": "entity",
+    "sounds": [
+      "buni:entity/bunbarian/mischief"
+    ]
   }
 }

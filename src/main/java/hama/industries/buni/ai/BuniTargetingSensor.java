@@ -1,13 +1,12 @@
 package hama.industries.buni.ai;
 
-import hama.industries.buni.Buni;
 import hama.industries.buni.BuniActivity;
 import hama.industries.buni.BuniConfig;
 import hama.industries.buni.BuniSounds;
+import hama.industries.buni.entity.Buni;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;

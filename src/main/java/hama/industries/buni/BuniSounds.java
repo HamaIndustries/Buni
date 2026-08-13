@@ -22,5 +22,7 @@ public class BuniSounds {
     public static final DeferredHolder<SoundEvent,SoundEvent> HIT = register("hit");
     public static final DeferredHolder<SoundEvent,SoundEvent> IDLE = register("idle");
 
+    public static final DeferredHolder<SoundEvent,SoundEvent> MISCHIEF = register("mischief");
+
     public static void init(IEventBus bus) { SOUNDS.register(bus); }
 }

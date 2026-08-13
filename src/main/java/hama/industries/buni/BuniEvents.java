@@ -1,5 +1,6 @@
 package hama.industries.buni;
 
+import hama.industries.buni.entity.Buni;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.player.Player;

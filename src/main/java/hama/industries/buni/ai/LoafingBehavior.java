@@ -1,9 +1,9 @@
 package hama.industries.buni.ai;
 
 import com.google.common.collect.ImmutableMap;
-import hama.industries.buni.Buni;
 import hama.industries.buni.BuniAi;
 import hama.industries.buni.BuniRegistry;
+import hama.industries.buni.entity.Buni;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;

@@ -1,29 +1,25 @@
 package hama.industries.buni.client;
 
-import hama.industries.buni.Buni;
 import hama.industries.buni.BuniAnimations;
 import hama.industries.buni.BuniMod;
+import hama.industries.buni.entity.Buni;
 import net.minecraft.util.Mth;
-import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.AnimationState;
-import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.constant.DataTickets;
+
 import software.bernie.geckolib.model.DefaultedEntityGeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
-public class BuniModel extends DefaultedEntityGeoModel<Buni> {
-    public BuniModel() {
-        super(BuniMod.id("buni"));
+public class BuniModel<T extends Buni> extends DefaultedEntityGeoModel<T> {
+    public BuniModel(String id) {
+        super(BuniMod.id(id));
     }
 
     @Override
-    public void setCustomAnimations(Buni animatable, long instanceId, AnimationState<Buni> animationState) {
+    public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
 
         GeoBone head = getAnimationProcessor().getBone("head");
-
-        RawAnimation raw = animationState.getController().getCurrentRawAnimation();
-        AnimationController<Buni> controller = animationState.getController();
 
         if (head != null && animationState.getData(BuniAnimations.LOOK_AROUND)) {
             EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);
