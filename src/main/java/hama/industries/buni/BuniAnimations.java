@@ -1,5 +1,6 @@
 package hama.industries.buni;
 
+import hama.industries.buni.entity.Buni;
 import software.bernie.geckolib.constant.DefaultAnimations;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;

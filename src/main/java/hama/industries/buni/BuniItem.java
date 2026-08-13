@@ -1,18 +1,16 @@
 package hama.industries.buni;
 
-import net.minecraft.client.color.item.ItemColor;
+import hama.industries.buni.entity.Buni;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
@@ -20,33 +18,21 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
 public class BuniItem extends Item {
-    public BuniItem() {
+    protected Buni.Variant variant;
+
+    public BuniItem(Buni.Variant variant) {
         super(new Item.Properties().stacksTo(1));
+        this.variant = variant;
     }
 
     public static ItemStack of(Buni buni) {
-        ItemStack stack = BuniRegistry.BUNI_ITEM.get().getDefaultInstance();
+        ItemStack stack = BuniRegistry.BUNI_ITEMS.get(buni.variant().id()).get().getDefaultInstance();
         stack.addTagElement("stored_buni", buni.serializeNBT());
-        DyeColor dyeColor = buni.variant().color();
-//        if (color != null) {
-//            var colorTag = new CompoundTag();
-//            colorTag.putInt("color", color.getFireworkColor());
-//            stack.
-//            stack.addTagElement("buni_color", colorTag);
-//        }
-        int color = dyeColor ==  null ? 0xFFFFFFFF : dyeColor.getFireworkColor();
-        Component name = buni.hasCustomName() ? buni.getCustomName() : Component.translatable("item.buni.buni");
-        var styledName = MutableComponent.create(
-                name.getContents()
-        ).withStyle(name.getStyle().withColor(color));
-        stack.setHoverName(styledName);
+        stack.setHoverName(buni.hasCustomName() ? buni.getCustomName() : Component.translatable("item.buni.buni"));
         return stack;
     }
 
@@ -95,22 +81,12 @@ public class BuniItem extends Item {
                 Vec3 look = player.getLookAngle();
                 e.setPos(player.getEyePosition().add(look));
                 e.knockback(2, -look.x, -look.z);
-                e.thrower = player;
+                e.setThrower(player);
                 if (stack.hasCustomHoverName()) {
                     e.setCustomName(stack.getHoverName().plainCopy());
                 }
             }, player.getOnPos(), MobSpawnType.BUCKET, true, false);
         }
         return InteractionResultHolder.sidedSuccess(ItemStack.EMPTY, level.isClientSide);
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public static class BuniItemColor implements ItemColor {
-        @Override
-        public int getColor(@NotNull ItemStack stack, int tintIndex)
-        {
-            var color = stack.getHoverName().getStyle().getColor();
-            return color == null ? 0xFFFFFFFF : color.getValue();
-        }
     }
 }

@@ -5,10 +5,13 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
+import net.minecraft.data.tags.DamageTypeTagsProvider;
 import net.minecraft.data.tags.EntityTypeTagsProvider;
 import net.minecraft.data.tags.ItemTagsProvider;
 import net.minecraft.data.tags.TagsProvider;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.Items;
@@ -41,6 +44,15 @@ public class BuniDatagen {
         event.getGenerator().addProvider(
                 event.includeServer(),
                new BuniEntityTypeTagsProvider(
+                        packOutput,
+                        event.getLookupProvider(),
+                        BuniMod.MODID,
+                        event.getExistingFileHelper()
+                ));
+
+        event.getGenerator().addProvider(
+                event.includeServer(),
+                new BuniDamageTypeTagsProvider(
                         packOutput,
                         event.getLookupProvider(),
                         BuniMod.MODID,
@@ -97,7 +109,23 @@ public class BuniDatagen {
 
         @Override
         protected void registerModels() {
-            basicItem(BuniRegistry.BUNI_ITEM.get());
+            for (var item : BuniRegistry.BUNI_ITEMS.entrySet()) {
+                basicItem(item.getValue().get());
+            }
+        }
+    }
+
+    public static class BuniDamageTypeTagsProvider extends DamageTypeTagsProvider {
+        public BuniDamageTypeTagsProvider(PackOutput pOutput, CompletableFuture<HolderLookup.Provider> pLookupProvider, String modId, @Nullable ExistingFileHelper existingFileHelper) {
+            super(pOutput, pLookupProvider, modId, existingFileHelper);
+        }
+
+        @Override
+        protected void addTags(HolderLookup.Provider pProvider) {
+            tag(BuniTags.DamageTypes.BUNI_IMMUNE)
+                    .add(DamageTypes.FALL)
+                    .add(DamageTypes.IN_FIRE)
+                    .addTags(DamageTypeTags.IS_FIRE);
         }
     }
 }

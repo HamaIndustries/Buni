@@ -22,5 +22,7 @@ public class BuniSounds {
     public static final RegistryObject<SoundEvent> HIT = register("hit");
     public static final RegistryObject<SoundEvent> IDLE = register("idle");
 
+    public static final RegistryObject<SoundEvent> MISCHIEF = register("mischief");
+
     public static void init(IEventBus bus) { SOUNDS.register(bus); }
 }

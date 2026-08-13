@@ -11,6 +11,7 @@ import net.minecraftforge.fml.common.Mod;
 public class BuniClient {
     @SubscribeEvent
     public static void registerRenderers(final EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(BuniRegistry.BUNI.get(), BuniRenderer::new);
+        event.registerEntityRenderer(BuniRegistry.BUNI.get(), manager -> new BuniRenderer<>(manager, "buni"));
+        event.registerEntityRenderer(BuniRegistry.BUNBARIAN.get(), manager -> new BuniRenderer<>(manager, "bunbarian"));
     }
 }

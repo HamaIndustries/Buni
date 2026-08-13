@@ -1,17 +1,15 @@
 package hama.industries.buni;
 
+import hama.industries.buni.entity.Buni;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -46,12 +44,23 @@ public class BuniSpawner {
 
         BlockPos spawnPos = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z));
         if (NaturalSpawner.isSpawnPositionOk(SpawnPlacements.Type.ON_GROUND, level, spawnPos, BuniRegistry.BUNI.get())) {
-            int bunCount = player.getRandom().nextIntBetweenInclusive(1, 2);
+            int bunCount;
+            EntityType<? extends Buni> bunType;
+            boolean evil = false;
+            if (level.random.nextFloat() < 0.001) {
+                bunCount = player.getRandom().nextIntBetweenInclusive(3, 4);
+                bunType =  BuniRegistry.BUNBARIAN.get();
+                evil = true;
+            } else {
+                bunCount = player.getRandom().nextIntBetweenInclusive(1, 2);
+                bunType = BuniRegistry.BUNI.get();
+            }
 
             for (int i = 0; i < bunCount; i++) {
-                Buni bun = BuniRegistry.BUNI.get().spawn(level, spawnPos, MobSpawnType.NATURAL);
+                bunType.spawn(level, spawnPos, MobSpawnType.NATURAL);
             }
             logIfDev("spawned buni at {}", spawnPos);
+            if (evil) logIfDev("(it is evil)");
         } else {
             logIfDev("failed to spawn buni at {}", spawnPos);
         }

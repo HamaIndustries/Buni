@@ -1,7 +1,7 @@
 package hama.industries.buni.ai;
 
-import hama.industries.buni.Buni;
 import hama.industries.buni.BuniAi;
+import hama.industries.buni.entity.Buni;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;

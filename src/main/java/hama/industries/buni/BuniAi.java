@@ -6,12 +6,34 @@ import com.mojang.serialization.Codec;
 import hama.industries.buni.ai.BuniTargetingSensor;
 import hama.industries.buni.ai.LoafingBehavior;
 import hama.industries.buni.ai.LoafingSensor;
+import hama.industries.buni.entity.Bunbarian;
+import hama.industries.buni.entity.Buni;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.Brain;
-import net.minecraft.world.entity.ai.behavior.*;
+import net.minecraft.world.entity.ai.behavior.BehaviorControl;
+import net.minecraft.world.entity.ai.behavior.CountDownCooldownTicks;
+import net.minecraft.world.entity.ai.behavior.DoNothing;
+import net.minecraft.world.entity.ai.behavior.EraseMemoryIf;
+import net.minecraft.world.entity.ai.behavior.FollowTemptation;
+import net.minecraft.world.entity.ai.behavior.GoToWantedItem;
+import net.minecraft.world.entity.ai.behavior.LookAtTargetSink;
+import net.minecraft.world.entity.ai.behavior.MeleeAttack;
+import net.minecraft.world.entity.ai.behavior.MoveToTargetSink;
+import net.minecraft.world.entity.ai.behavior.OneShot;
+import net.minecraft.world.entity.ai.behavior.RandomStroll;
+import net.minecraft.world.entity.ai.behavior.RunOne;
+import net.minecraft.world.entity.ai.behavior.SetEntityLookTargetSometimes;
+import net.minecraft.world.entity.ai.behavior.SetLookAndInteract;
+import net.minecraft.world.entity.ai.behavior.SetWalkTargetAwayFrom;
+import net.minecraft.world.entity.ai.behavior.SetWalkTargetFromAttackTargetIfTargetOutOfReach;
+import net.minecraft.world.entity.ai.behavior.SetWalkTargetFromLookTarget;
+import net.minecraft.world.entity.ai.behavior.StartAttacking;
+import net.minecraft.world.entity.ai.behavior.StopAttackingIfTargetInvalid;
+import net.minecraft.world.entity.ai.behavior.Swim;
 import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
@@ -67,7 +89,7 @@ public class BuniAi {
             TUMBLING
     );
 
-    public static Brain<?> makeBrain(Brain<Buni> brain) {
+    public static Brain<?> makeBrain(Brain<? extends Buni> brain) {
         initCoreActivity(brain);
         initIdleActivity(brain);
         initFightActivity(brain);
@@ -84,7 +106,7 @@ public class BuniAi {
         return Brain.provider(MEMORY_TYPES, SENSOR_TYPES);
     }
 
-    public static void initCoreActivity(Brain<Buni> brain) {
+    public static void initCoreActivity(Brain<? extends Buni> brain) {
         brain.addActivity(Activity.CORE, 0, ImmutableList.of(
                 new LookAtTargetSink(45, 90),
                 new Swim(0.1f),
@@ -100,7 +122,7 @@ public class BuniAi {
 
     public static final int ITEM_STEAL_DISTANCE = 32;
 
-    public static void initIdleActivity(Brain<Buni> brain) {
+    public static void initIdleActivity(Brain<? extends Buni> brain) {
         brain.addActivityAndRemoveMemoriesWhenStopped(
                 BuniActivity.IDLE, ImmutableList.of(
                         Pair.of(0, new FollowTemptation(e -> 1f)),
@@ -119,13 +141,13 @@ public class BuniAi {
         );
     }
 
-    public static void initTumbleActivity(Brain<Buni> brain) {
+    public static void initTumbleActivity(Brain<? extends Buni> brain) {
         brain.addActivityAndRemoveMemoriesWhenStopped(
                 BuniActivity.TUMBLE, ImmutableList.of(
                         Pair.of(0, new DoNothing(10, 10)),
                         Pair.of(1, EraseMemoryIf.create(e -> {
                             boolean landed = e.isPassenger() || (e.onGround() && e.tumblingTicks > 3);
-                            if (landed) e.thrower = null;
+                            if (landed) e.setThrower(null);
                             return landed;
                         }, TUMBLING))
                 ),
@@ -134,7 +156,7 @@ public class BuniAi {
         );
     }
 
-    public static void initFightActivity(Brain<Buni> brain) {
+    public static void initFightActivity(Brain<? extends Buni> brain) {
         brain.addActivityAndRemoveMemoryWhenStopped(Activity.FIGHT, 0, ImmutableList.of(
                 StopAttackingIfTargetInvalid.create(),
                 SetWalkTargetFromAttackTargetIfTargetOutOfReach.create(e -> 1f),
@@ -143,7 +165,7 @@ public class BuniAi {
             ), MemoryModuleType.ATTACK_TARGET);
     }
 
-    public static void initLoafActivity(Brain<Buni> brain) {
+    public static void initLoafActivity(Brain<? extends Buni> brain) {
         brain.addActivityAndRemoveMemoriesWhenStopped(
             BuniActivity.LOAF,
             ImmutableList.of(
@@ -156,7 +178,7 @@ public class BuniAi {
         );
     }
 
-    public static void initDanceActivity(Brain<Buni> brain) {
+    public static void initDanceActivity(Brain<? extends Buni> brain) {
         brain.addActivityWithConditions(BuniActivity.DANCE, ImmutableList.of(
                 Pair.of(0, new DoNothing(20, 30))
             ),
@@ -190,4 +212,84 @@ public class BuniAi {
         event.register(ForgeRegistries.MEMORY_MODULE_TYPES.getRegistryKey(), BuniMod.id("wants_to_loaf"), () -> WANTS_TO_LOAF);
         event.register(ForgeRegistries.MEMORY_MODULE_TYPES.getRegistryKey(), BuniMod.id("tumbling"), () -> TUMBLING);
     }
+
+    public static class Hostile {
+        public static final ImmutableList<? extends SensorType<? extends Sensor<? super Buni>>> HOSTILE_SENSOR_TYPES = ImmutableList.of(
+                SensorType.NEAREST_LIVING_ENTITIES,
+                SensorType.NEAREST_ITEMS,
+                SensorType.NEAREST_PLAYERS,
+                LOAFING_SENSOR,
+                EVIL_SENSOR
+        );
+
+        public static final ImmutableList<? extends MemoryModuleType<?>> HOSTILE_MEMORY_TYPES = ImmutableList.of(
+                MemoryModuleType.LOOK_TARGET,
+                MemoryModuleType.WALK_TARGET,
+                MemoryModuleType.INTERACTION_TARGET,
+                MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE,
+                MemoryModuleType.PATH,
+                MemoryModuleType.ATTACK_TARGET,
+                MemoryModuleType.ATTACK_COOLING_DOWN,
+                MemoryModuleType.IS_PANICKING,
+                MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES,
+                MemoryModuleType.NEAREST_LIVING_ENTITIES,
+                MemoryModuleType.NEAREST_REPELLENT,
+                MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER,
+                TUMBLING,
+                TIME_SINCE_ACTIVITY,
+                WANTS_TO_LOAF
+        );
+
+        public static Brain.Provider<Bunbarian> brainProvider() {
+            return Brain.provider(HOSTILE_MEMORY_TYPES, HOSTILE_SENSOR_TYPES);
+        }
+
+        public static void initIdleActivity(Brain<? extends Bunbarian> brain) {
+            brain.addActivityAndRemoveMemoriesWhenStopped(
+                    BuniActivity.IDLE, ImmutableList.of(
+                            Pair.of(1, avoidRepellent()),
+                            Pair.of(2, StartAttacking.create(BuniAi.Hostile::findNearestHostileAttackTarget)),
+                            Pair.of(3, SetEntityLookTargetSometimes.create(EntityType.PLAYER, 6.0F, UniformInt.of(30, 60))),
+                            Pair.of(4, new RunOne<>(List.of(
+                                    Pair.of(new DoNothing(30, 60), 2),
+                                    Pair.of(RandomStroll.stroll(1, false), 4),
+                                    Pair.of(SetWalkTargetFromLookTarget.create(1f, 3), 1)
+                            )))
+                    ),
+                    Set.of(Pair.of(TIME_SINCE_ACTIVITY, MemoryStatus.REGISTERED)),
+                    Set.of(TIME_SINCE_ACTIVITY)
+            );
+        }
+
+        public static void initFightActivity(Brain<? extends Bunbarian> brain) {
+            brain.addActivityAndRemoveMemoryWhenStopped(Activity.FIGHT, 0, ImmutableList.of(
+                    StopAttackingIfTargetInvalid.create(),
+                    SetWalkTargetFromAttackTargetIfTargetOutOfReach.create(e -> 1f),
+                    MeleeAttack.create(20)
+            ), MemoryModuleType.ATTACK_TARGET);
+        }
+
+        private static Optional<? extends LivingEntity> getTargetIfWithinRange(Buni buni, MemoryModuleType<? extends LivingEntity> pMemoryType) {
+            return buni.getBrain().getMemory(pMemoryType).filter((target) -> {
+                return target.closerThan(buni, 12.0D);
+            });
+        }
+
+        private static Optional<? extends LivingEntity> findNearestHostileAttackTarget(Buni hostile) {
+            return getTargetIfWithinRange(hostile, MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER);
+        }
+
+        public static Brain<?> makeBrain(Brain<Bunbarian> brain) {
+            BuniAi.initCoreActivity(brain);
+            BuniAi.Hostile.initIdleActivity(brain);
+            BuniAi.Hostile.initFightActivity(brain);
+            BuniAi.initLoafActivity(brain);
+            BuniAi.initTumbleActivity(brain);
+            brain.setCoreActivities(Set.of(Activity.CORE));
+            brain.setDefaultActivity(Activity.IDLE);
+            brain.useDefaultActivity();
+            return brain;
+        }
+    }
+
 }

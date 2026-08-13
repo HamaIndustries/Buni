@@ -1,10 +1,10 @@
 package hama.industries.buni.ai;
 
-import hama.industries.buni.Buni;
 import hama.industries.buni.BuniActivity;
 import hama.industries.buni.BuniConfig;
 import hama.industries.buni.BuniSounds;
 import hama.industries.buni.BuniTags;
+import hama.industries.buni.entity.Buni;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
