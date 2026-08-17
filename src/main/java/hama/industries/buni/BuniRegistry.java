@@ -2,6 +2,7 @@ package hama.industries.buni;
 
 import hama.industries.buni.entity.Bunbarian;
 import hama.industries.buni.entity.Buni;
+import hama.industries.buni.item.BuniItem;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.Item;

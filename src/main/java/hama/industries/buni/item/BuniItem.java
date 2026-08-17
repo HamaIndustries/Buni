@@ -1,5 +1,6 @@
-package hama.industries.buni;
+package hama.industries.buni.item;
 
+import hama.industries.buni.BuniRegistry;
 import hama.industries.buni.entity.Buni;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
