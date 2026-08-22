@@ -4,9 +4,10 @@ import hama.industries.buni.BuniAnimations;
 import hama.industries.buni.BuniMod;
 import hama.industries.buni.entity.Buni;
 import net.minecraft.util.Mth;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
-import software.bernie.geckolib.core.animation.AnimationState;
+
 import software.bernie.geckolib.model.DefaultedEntityGeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
@@ -17,7 +18,8 @@ public class BuniModel<T extends Buni> extends DefaultedEntityGeoModel<T> {
 
     @Override
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
-        CoreGeoBone head = getAnimationProcessor().getBone("head");
+
+        GeoBone head = getAnimationProcessor().getBone("head");
 
         if (head != null && animationState.getData(BuniAnimations.LOOK_AROUND)) {
             EntityModelData entityData = animationState.getData(DataTickets.ENTITY_MODEL_DATA);

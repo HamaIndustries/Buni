@@ -8,11 +8,9 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnPlacements;
-import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 public class BuniSpawner {
     /*
@@ -21,10 +19,11 @@ public class BuniSpawner {
 
     public static final boolean DEV = !FMLEnvironment.production;
 
-    public static void tickSpawnBunis(TickEvent.PlayerTickEvent event) {
-        if (event.side == LogicalSide.CLIENT || event.phase == TickEvent.Phase.START ||
-                !event.player.getServer().getGameRules().getRule(BuniGameRules.RULE_NATURAL_BUNI_SPAWNS).get()) return;
-        ServerPlayer player = (ServerPlayer) event.player;
+    public static void tickSpawnBunis(PlayerTickEvent.Post event) {
+        if (event.getEntity().level().isClientSide ||
+                !event.getEntity().getServer().getGameRules().getRule(BuniGameRules.RULE_NATURAL_BUNI_SPAWNS).get())
+            return;
+        ServerPlayer player = (ServerPlayer) event.getEntity();
         ServerLevel level = player.serverLevel();
 
         double originDistance = level.getSharedSpawnPos().getCenter().distanceTo(player.position());
@@ -43,13 +42,13 @@ public class BuniSpawner {
         z = player.getBlockZ() + BuniConfig.CONFIG.MIN_SPAWN_RADIUS.get() + z;
 
         BlockPos spawnPos = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z));
-        if (NaturalSpawner.isSpawnPositionOk(SpawnPlacements.Type.ON_GROUND, level, spawnPos, BuniRegistry.BUNI.get())) {
+        if (SpawnPlacements.isSpawnPositionOk(BuniRegistry.BUNI.get(),/*SpawnPlacementTypes.ON_GROUND,*/ level, spawnPos)) {
             int bunCount;
             EntityType<? extends Buni> bunType;
             boolean evil = false;
-            if (level.random.nextFloat() < BuniConfig.CONFIG.BUNBARIAN_SPAWN_CHANCE.get()) {
+            if (level.random.nextFloat() < 0.001) {
                 bunCount = player.getRandom().nextIntBetweenInclusive(3, 4);
-                bunType =  BuniRegistry.BUNBARIAN.get();
+                bunType = BuniRegistry.BUNBARIAN.get();
                 evil = true;
             } else {
                 bunCount = player.getRandom().nextIntBetweenInclusive(1, 2);
@@ -61,13 +60,12 @@ public class BuniSpawner {
             }
             logIfDev("spawned buni at {}", spawnPos);
             if (evil) logIfDev("(it is evil)");
-        } else {
-            logIfDev("failed to spawn buni at {}", spawnPos);
+            logIfDev("total: {}", spawnCount);
         }
-        logIfDev("total: {}", spawnCount);
-    }
 
-    public static void logIfDev(String s, Object... args) {
+
+    }
+    public static void logIfDev (String s, Object...args){
         if (DEV) {
             BuniMod.LOGGER.info(s, args);
         }

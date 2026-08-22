@@ -14,6 +14,39 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.level.Level;
 
+/*
+//Player-Hostile Bunis that can be confused for wild bunis,
+but spawn EXTREMELY rarely, in clusters of 3 - 4. Innocuous
+seeming, but they have “war paint” on their face that gives
+ them angry eyebrows.
+
+Mostly identical in sounds, but they have a unique mischievous
+ chuckling when aggro’d, as a warning to the player that
+  something is wrong.
+
+//They do higher damage than regular bunis (6 HP / 3 Hearts),
+ modelled to swing makeshift axes instead. Zombie-like damage,
+ but only with 10 HP and 2 Armor. Still immune to fire and
+ fall damage, though, and still gets sent flying by being struck.
+
+///Cannot be duplicated by axe hits or picked up in a hand.
+
+ ///Still afraid of soul lights.
+
+ //They are also NOT attracted
+ ///by flowers or dropped items, and do not munch items off the floor.
+
+Mostly meant to be a funny occasional troll for players
+ out in the wild thinking they’re approaching a regular buni,
+ only for the buni to whip around and look at them with
+ angry eyes and attack. Also meant to be spawned by Ops
+  for “raid” events and RP scenarios.
+
+Their loot upon death should have some early-game
+valuables when killed, like random berries/fruit/vegetables,
+a random sapling or iron/copper/gold ingots.
+ */
+
 public class Bunbarian extends Buni {
 
     public static AttributeSupplier.Builder createAttributes() {

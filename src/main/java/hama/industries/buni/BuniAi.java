@@ -6,6 +6,7 @@ import com.mojang.serialization.Codec;
 import hama.industries.buni.ai.BuniTargetingSensor;
 import hama.industries.buni.ai.LoafingBehavior;
 import hama.industries.buni.ai.LoafingSensor;
+import net.minecraft.core.registries.Registries;
 import hama.industries.buni.entity.Bunbarian;
 import hama.industries.buni.entity.Buni;
 import net.minecraft.server.level.ServerLevel;
@@ -42,8 +43,7 @@ import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.entity.ai.sensing.TemptingSensor;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegisterEvent;
+import net.neoforged.neoforge.registries.RegisterEvent;
 
 import java.util.List;
 import java.util.Optional;
@@ -205,12 +205,12 @@ public class BuniAi {
     }
 
     public static void registerSensorsAndMemories(RegisterEvent event) {
-        event.register(ForgeRegistries.SENSOR_TYPES.getRegistryKey(), BuniMod.id("buni_temptations"), () -> BUNI_TEMPTATIONS);
-        event.register(ForgeRegistries.SENSOR_TYPES.getRegistryKey(), BuniMod.id("loafing"), () -> LOAFING_SENSOR);
-        event.register(ForgeRegistries.SENSOR_TYPES.getRegistryKey(), BuniMod.id("evil"), () -> EVIL_SENSOR);
-        event.register(ForgeRegistries.MEMORY_MODULE_TYPES.getRegistryKey(), BuniMod.id("time_since_activity"), () -> TIME_SINCE_ACTIVITY);
-        event.register(ForgeRegistries.MEMORY_MODULE_TYPES.getRegistryKey(), BuniMod.id("wants_to_loaf"), () -> WANTS_TO_LOAF);
-        event.register(ForgeRegistries.MEMORY_MODULE_TYPES.getRegistryKey(), BuniMod.id("tumbling"), () -> TUMBLING);
+        event.register(Registries.SENSOR_TYPE, BuniMod.id("buni_temptations"), () -> BUNI_TEMPTATIONS);
+        event.register(Registries.SENSOR_TYPE, BuniMod.id("loafing"), () -> LOAFING_SENSOR);
+        event.register(Registries.SENSOR_TYPE, BuniMod.id("evil"), () -> EVIL_SENSOR);
+        event.register(Registries.MEMORY_MODULE_TYPE, BuniMod.id("time_since_activity"), () -> TIME_SINCE_ACTIVITY);
+        event.register(Registries.MEMORY_MODULE_TYPE, BuniMod.id("wants_to_loaf"), () -> WANTS_TO_LOAF);
+        event.register(Registries.MEMORY_MODULE_TYPE, BuniMod.id("tumbling"), () -> TUMBLING);
     }
 
     public static class Hostile {

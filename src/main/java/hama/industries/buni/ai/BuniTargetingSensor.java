@@ -3,7 +3,6 @@ package hama.industries.buni.ai;
 import hama.industries.buni.BuniActivity;
 import hama.industries.buni.BuniConfig;
 import hama.industries.buni.BuniSounds;
-import hama.industries.buni.BuniTags;
 import hama.industries.buni.entity.Buni;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -23,35 +22,24 @@ public class BuniTargetingSensor extends Sensor<Buni> {
     @Override
     protected void doTick(ServerLevel level, Buni buni) {
         Brain<Buni> brain = buni.getBrain();
+        boolean evil = buni.isEvil();
 
-        boolean hadRepellent = brain.getMemory(MemoryModuleType.NEAREST_REPELLENT).isPresent();
+        if (!evil) {
+            boolean hadRepellent = brain.getMemory(MemoryModuleType.NEAREST_REPELLENT).isPresent();
 
-        brain.setMemory(MemoryModuleType.NEAREST_REPELLENT, findNearestRepellent(level, buni));
+            brain.setMemory(MemoryModuleType.NEAREST_REPELLENT, findNearestRepellent(level, buni));
 
-        if (!hadRepellent && buni.isRepelled()) {
-            buni.playSound(BuniSounds.REPELLED.get());
+            if (!hadRepellent && buni.isRepelled()) {
+                buni.playSound(BuniSounds.REPELLED.get());
+            }
         }
 
-        // randomly pick on a mob
-        if (!buni.isRepelled() && brain.getActiveNonCoreActivity().filter(act -> act == BuniActivity.DANCE).isEmpty()
-                && brain.getMemory(MemoryModuleType.ATTACK_TARGET).isEmpty()
+        if (evil || (!buni.isRepelled() && buni.getRandom().nextDouble() < BuniConfig.CONFIG.PICK_ON_CHANCE.get() &&
+                brain.getActiveNonCoreActivity().filter(act -> act == BuniActivity.DANCE).isEmpty()) && brain.getMemory(MemoryModuleType.ATTACK_TARGET).isEmpty()
         ) {
-            var visibles = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES);
-            visibles.ifPresent(possibleTargets -> {
-
-                // find an enemy
-                Optional<LivingEntity> target = possibleTargets.find(entity -> entity.getType().is(BuniTags.EntityTypes.KILL_ON_SIGHT))
-                        .findFirst();
-                if (target.isPresent()) {
-                    brain.setMemory(MemoryModuleType.ATTACK_TARGET, target);
-
-                // or, find someone to bully
-                } else if (buni.getRandom().nextDouble() < BuniConfig.CONFIG.PICK_ON_CHANCE.get()) {
-                    target = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES)
-                            .flatMap(nearest -> nearest.findClosest(buni::canTargetEntity));
-                    brain.setMemory(MemoryModuleType.ATTACK_TARGET, target);
-                }
-            });
+            Optional<LivingEntity> target = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES)
+                    .flatMap(nearest -> nearest.findClosest(buni::canTargetEntity));
+            brain.setMemory(MemoryModuleType.ATTACK_TARGET, target);
         }
     }
 
