@@ -14,12 +14,15 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.common.data.LanguageProvider;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
+import org.codehaus.plexus.util.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -31,27 +34,24 @@ public class BuniDatagen {
     public static void generateData(GatherDataEvent event) {
         DataGenerator generator = event.getGenerator();
         PackOutput packOutput = generator.getPackOutput();
-        event.getGenerator().addProvider(
-                event.includeServer(),
-                (DataProvider.Factory<BuniItemTagsProvider>) (PackOutput output) -> new BuniItemTagsProvider(
-                        output,
+        event.addProvider(
+                new BuniItemTagsProvider(
+                        packOutput,
                         event.getLookupProvider(),
                         CompletableFuture.completedFuture(TagsProvider.TagLookup.empty()),
                         BuniMod.MODID,
                         event.getExistingFileHelper()
-        ));
+                ));
 
-        event.getGenerator().addProvider(
-                event.includeServer(),
-               new BuniEntityTypeTagsProvider(
+        event.addProvider(
+                new BuniEntityTypeTagsProvider(
                         packOutput,
                         event.getLookupProvider(),
                         BuniMod.MODID,
                         event.getExistingFileHelper()
                 ));
 
-        event.getGenerator().addProvider(
-                event.includeServer(),
+        event.addProvider(
                 new BuniDamageTypeTagsProvider(
                         packOutput,
                         event.getLookupProvider(),
@@ -59,10 +59,8 @@ public class BuniDatagen {
                         event.getExistingFileHelper()
                 ));
 
-        event.getGenerator().addProvider(
-                event.includeClient(),
-                (DataProvider.Factory<BuniItemModelsProvider>) (PackOutput output) -> new BuniItemModelsProvider(output, event.getExistingFileHelper())
-        );
+        event.addProvider(new BuniItemModelsProvider(packOutput, event.getExistingFileHelper()));
+        event.addProvider(new BuniLanguageProvider(packOutput));
     }
 
     public static class BuniItemTagsProvider extends ItemTagsProvider {
@@ -88,7 +86,7 @@ public class BuniDatagen {
 
     public static class BuniEntityTypeTagsProvider extends EntityTypeTagsProvider {
 
-        public BuniEntityTypeTagsProvider(PackOutput p_275204_, CompletableFuture<HolderLookup.Provider> p_275194_,  String modId, @Nullable ExistingFileHelper existingFileHelper) {
+        public BuniEntityTypeTagsProvider(PackOutput p_275204_, CompletableFuture<HolderLookup.Provider> p_275194_, String modId, @Nullable ExistingFileHelper existingFileHelper) {
             super(p_275204_, p_275194_, modId, existingFileHelper);
         }
 
@@ -125,6 +123,30 @@ public class BuniDatagen {
                     .add(DamageTypes.FALL)
                     .add(DamageTypes.IN_FIRE)
                     .addTags(DamageTypeTags.IS_FIRE);
+        }
+    }
+
+    public static class BuniLanguageProvider extends LanguageProvider {
+        public BuniLanguageProvider(PackOutput output) {
+            super(output, BuniMod.MODID, "en_us");
+        }
+
+        @Override
+        protected void addTranslations() {
+            addEntityType(BuniRegistry.BUNI, "Buni");
+            addEntityType(BuniRegistry.BUNBARIAN, "Buni");
+            BuniRegistry.BUNI_ITEMS.forEach((s, itemItemDeferredHolder) ->
+                    addItem(itemItemDeferredHolder, StringUtils.capitaliseAllWords(s)+" Buni"));
+
+            add("buni.entity.buni.hit", "Buni Hit");
+            add("buni.entity.buni.death", "Buni Explodes");
+            add("buni.entity.buni.idle", "Buni Chirps");
+            add("buni.entity.buni.Guzzle", "Buni Guzzles");
+            add("buni.entity.buni.Attack", "Buni Attack");
+        }
+
+        public static String getNameFromItem(String s) {
+            return StringUtils.capitaliseAllWords(s.split("\\.")[2].replace("_", " "));
         }
     }
 }

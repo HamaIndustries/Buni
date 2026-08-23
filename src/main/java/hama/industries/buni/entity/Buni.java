@@ -521,7 +521,10 @@ public class Buni extends PathfinderMob implements GeoEntity, InventoryCarrier {
 
     public CustomData createCustomData() {
         CustomData customdata = CustomData.EMPTY
-                .update(this::saveAsPassenger);
+                .update(compound -> {
+                    save(compound);
+                    compound.remove("Pos");//prevents ghost teleports
+                });
         return customdata;
     }
 
