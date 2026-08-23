@@ -96,6 +96,7 @@ public class BuniDatagen {
             hostiles.add(EntityType.PLAYER);
             hostiles.add(BuniRegistry.BUNI.get());
             tag(BuniTags.EntityTypes.BUNI_ATTACK).add(hostiles.toArray(EntityType[]::new));
+            tag(BuniTags.EntityTypes.KILL_ON_SIGHT);
         }
     }
 

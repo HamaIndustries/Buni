@@ -3,6 +3,8 @@ package hama.industries.buni.ai;
 import hama.industries.buni.BuniActivity;
 import hama.industries.buni.BuniConfig;
 import hama.industries.buni.BuniSounds;
+import hama.industries.buni.BuniTags;
+import hama.industries.buni.entity.Bunbarian;
 import hama.industries.buni.entity.Buni;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -37,9 +39,22 @@ public class BuniTargetingSensor extends Sensor<Buni> {
         if (evil || (!buni.isRepelled() && buni.getRandom().nextDouble() < BuniConfig.CONFIG.PICK_ON_CHANCE.get() &&
                 brain.getActiveNonCoreActivity().filter(act -> act == BuniActivity.DANCE).isEmpty()) && brain.getMemory(MemoryModuleType.ATTACK_TARGET).isEmpty()
         ) {
-            Optional<LivingEntity> target = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES)
-                    .flatMap(nearest -> nearest.findClosest(buni::canTargetEntity));
-            brain.setMemory(MemoryModuleType.ATTACK_TARGET, target);
+            var visibles = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES);
+            visibles.ifPresent(possibleTargets -> {
+                // find an enemy
+                Optional<LivingEntity> target = buni instanceof Bunbarian ? Optional.empty() :
+                        possibleTargets.find(entity -> entity.getType().is(BuniTags.EntityTypes.KILL_ON_SIGHT))
+                        .findFirst();
+                if (target.isPresent()) {
+                    brain.setMemory(MemoryModuleType.ATTACK_TARGET, target);
+
+                    // or, find someone to bully
+                } else if (buni.getRandom().nextDouble() < BuniConfig.CONFIG.PICK_ON_CHANCE.get()) {
+                    target = brain.getMemory(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES)
+                            .flatMap(nearest -> nearest.findClosest(buni::canTargetEntity));
+                    brain.setMemory(MemoryModuleType.ATTACK_TARGET, target);
+                }
+            });
         }
     }
 
